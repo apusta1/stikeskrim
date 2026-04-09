@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mini Paint</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f0f0; }
+        .toolbar { margin: 10px; padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        canvas { border: 2px solid #333; background: #fff; cursor: crosshair; }
+        button { padding: 8px 15px; margin: 0 5px; cursor: pointer; border: 1px solid #ccc; background: #eee; }
+        button.active { background: #ff4444; color: white; border-color: #cc0000; }
+    </style>
+</head>
+<body>
+
+    <h2>Mini Paint</h2>
+
+    <div class="toolbar">
+        <button onclick="setTool('line')" id="lineBtn">Garis</button>
+        <button onclick="setTool('oval')" id="ovalBtn">Oval</button>
+        <button onclick="setTool('eraser')" id="eraserBtn">Penghapus</button>
+        <button onclick="clearCanvas()" style="margin-left: 20px;">Reset</button>
+    </div>
+
+    <div style="position: relative;">
+        <canvas id="mainCanvas" width="800" height="500"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let tool = 'line';
+        let isDrawing = false;
+        let startX, startY;
+        let snapshot; // To store the canvas state before drawing a new shape
+
+        // Initialize button state
+        document.getElementById('lineBtn').classList.add('active');
+
+        function setTool(newTool) {
+            tool = newTool;
+            document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(newTool + 'Btn').classList.add('active');
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            startX = e.offsetX;
+            startY = e.offsetY;
+            // Save the current canvas so we can "undo" the preview on every mouse move
+            snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            
+            // Restore canvas to hide the previous preview frame
+            ctx.putImageData(snapshot, 0, 0);
+
+            const currentX = e.offsetX;
+            const currentY = e.offsetY;
+
+            ctx.beginPath();
+            
+            if (tool === 'line') {
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 2;
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+            } 
+            else if (tool === 'oval') {
+                ctx.strokeStyle = 'red';
+                ctx.lineWidth = 2;
+                // Calculate radius and center for an ellipse
+                let radiusX = Math.abs(currentX - startX) / 2;
+                let radiusY = Math.abs(currentY - startY) / 2;
+                let centerX = startX + (currentX - startX) / 2;
+                let centerY = startY + (currentY - startY) / 2;
+                ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+                ctx.stroke();
+            } 
+            else if (tool === 'eraser') {
+                // Eraser doesn't need a preview, it just wipes pixels
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 20;
+                ctx.lineCap = 'round';
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+                // Update snapshot while erasing so it's permanent
+                snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+    </script>
+</body>
+</html>

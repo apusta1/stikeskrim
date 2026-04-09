@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manipulatif Virtual Stik Es Krim</title>
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --panel: #ffffff;
+            --primary: #2196f3;
+            --secondary: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --text: #2c3e50;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            background: var(--bg); 
+            margin: 0;
+            overflow: hidden;
+        }
+
+        header {
+            width: 100%;
+            background: var(--panel);
+            padding: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+        button { 
+            padding: 10px 18px; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            border: none; 
+            font-size: 13px;
+            font-weight: bold; 
+            transition: 0.2s;
+            color: white;
+        }
+
+        .add { background: var(--secondary); }
+        .bundle { background: var(--primary); }
+        .unbundle { background: var(--warning); }
+        .delete { background: #607d8b; }
+        .reset { background: var(--danger); }
+        
+        button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        button:active { transform: translateY(1px); }
+
+        canvas { 
+            margin-top: 20px;
+            border: 2px solid #ddd; 
+            background: #fff; 
+            cursor: default; 
+            touch-action: none; 
+            border-radius: 8px;
+        }
+
+        .tip { margin-top: 10px; font-size: 0.85rem; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="controls">
+        <button class="add" onclick="addStick()">Tambah Stik</button>
+        <button class="bundle" onclick="bundleSelected()">Gabung Stik Terpilih</button>
+        <button class="unbundle" onclick="unbundleSelected()">Pisah Stik Terpilih</button>
+        <button class="delete" onclick="deleteSelected()">Hapus Stik Terpilih</button>
+        <button class="reset" onclick="resetCanvas()">Bersihkan Meja</button>
+    </div>
+</header>
+
+<canvas id="mc" width="900" height="600"></canvas>
+<div class="tip">Click to select/deselect items. Drag to move them around.</div>
+
+<script>
+const canvas = document.getElementById('mc');
+const ctx = canvas.getContext('2d');
+
+let items = []; 
+let isDragging = false;
+let dragTarget = null;
+let offset = { x: 0, y: 0 };
+let hasMoved = false;
+
+class StickItem {
+    constructor(type, x, y, count = 1) {
+        this.type = type; 
+        this.x = x;
+        this.y = y;
+        this.count = count; 
+        this.selected = false;
+        
+        // DYNAMIC WIDTH: Adjusts based on the number of sticks inside
+        this.w = type === 'stick' ? 16 : 15 + (count * 6);
+        this.h = 90;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // Selection Highlight (Glow Effect)
+        if (this.selected) {
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "rgba(33, 150, 243, 0.7)";
+            ctx.strokeStyle = "#2196f3";
+            ctx.lineWidth = 3;
+            // Draw a rounded selection box
+            ctx.beginPath();
+            ctx.roundRect(-this.w/2 - 8, -this.h/2 - 8, this.w + 16, this.h + 16, 10);
+            ctx.stroke();
+            ctx.shadowBlur = 0; // Reset shadow so it doesn't affect sticks
+        }
+
+        if (this.type === 'stick') {
+            this.drawStick(0, 0);
+        } else {
+            // Draw bundled sticks spread across the dynamic width
+            for (let i = 0; i < this.count; i++) {
+                const ox = (i - (this.count - 1) / 2) * 6;
+                const rot = (i - (this.count - 1) / 2) * 0.025;
+                this.drawStick(ox, Math.abs(ox) * 0.15, rot);
+            }
+
+            // DYNAMIC RUBBER BAND
+            // It uses 'this.w' which scales with 'this.count'
+            const bandWidth = this.w + 4;
+            ctx.fillStyle = "#4caf50";
+            ctx.strokeStyle = "#2e7d32";
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.roundRect(-bandWidth / 2, -6, bandWidth, 14, 4);
+            ctx.fill();
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    drawStick(ox, oy, rot = 0) {
+        ctx.save();
+        ctx.translate(ox, oy);
+        ctx.rotate(rot);
+        ctx.fillStyle = "#ffeb3b";
+        ctx.strokeStyle = "#fbc02d";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(-7, -45, 14, 90, 5);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    contains(mx, my) {
+        return mx > this.x - this.w/2 - 5 && mx < this.x + this.w/2 + 5 &&
+               my > this.y - this.h/2 - 5 && my < this.y + this.h/2 + 5;
+    }
+}
+
+function addStick() {
+    items.push(new StickItem('stick', 150 + Math.random()*100, 150 + Math.random()*100));
+    render();
+}
+
+function bundleSelected() {
+    const selected = items.filter(i => i.selected);
+    if (selected.length < 2) {
+        alert("Select at least two items (sticks or bundles) to bundle them!");
+        return;
+    }
+
+    let totalCount = 0;
+    let avgX = 0, avgY = 0;
+
+    selected.forEach(item => {
+        totalCount += item.count;
+        avgX += item.x;
+        avgY += item.y;
+    });
+
+    avgX /= selected.length;
+    avgY /= selected.length;
+
+    // Filter out the items being bundled
+    items = items.filter(i => !i.selected);
+    
+    // Create the new combined bundle
+    const newBundle = new StickItem('bundle', avgX, avgY, totalCount);
+    newBundle.selected = true;
+    items.push(newBundle);
+    render();
+}
+
+function unbundleSelected() {
+    const selectedBundles = items.filter(i => i.selected && i.type === 'bundle');
+    
+    if (selectedBundles.length === 0) {
+        alert("Select a bundle first to unbundle it.");
+        return;
+    }
+
+    selectedBundles.forEach(bundle => {
+        items = items.filter(i => i !== bundle);
+        for(let i=0; i < bundle.count; i++) {
+            const s = new StickItem('stick', bundle.x + (Math.random()-0.5)*100, bundle.y + (Math.random()-0.5)*50);
+            s.selected = true;
+            items.push(s);
+        }
+    });
+    render();
+}
+
+function deleteSelected() {
+    items = items.filter(i => !i.selected);
+    render();
+}
+
+function resetCanvas() {
+    items = [];
+    render();
+}
+
+function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    items.forEach(item => item.draw());
+}
+
+// Mouse/Touch Interaction
+canvas.addEventListener('mousedown', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    hasMoved = false;
+    dragTarget = null;
+
+    for (let i = items.length - 1; i >= 0; i--) {
+        if (items[i].contains(mx, my)) {
+            dragTarget = items[i];
+            offset.x = mx - dragTarget.x;
+            offset.y = my - dragTarget.y;
+            isDragging = true;
+            // Move to front visually
+            items.splice(i, 1);
+            items.push(dragTarget);
+            break;
+        }
+    }
+    render();
+});
+
+window.addEventListener('mousemove', e => {
+    if (isDragging && dragTarget) {
+        const rect = canvas.getBoundingClientRect();
+        dragTarget.x = e.clientX - rect.left - offset.x;
+        dragTarget.y = e.clientY - rect.top - offset.y;
+        hasMoved = true;
+        render();
+    }
+});
+
+window.addEventListener('mouseup', () => {
+    if (!hasMoved && dragTarget) {
+        dragTarget.selected = !dragTarget.selected;
+    }
+    isDragging = false;
+    dragTarget = null;
+    render();
+});
+
+// Start with a small default set
+for(let i=0; i<3; i++) addStick();
+</script>
+</body>
+</html>

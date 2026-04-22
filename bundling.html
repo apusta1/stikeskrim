@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Manipulatif Virtual Stik Es Krim</title>
     <style>
         :root {
@@ -23,6 +23,7 @@
             background: var(--bg); 
             margin: 0;
             overflow: hidden;
+            touch-action: pan-y pinch-zoom; /* Allow vertical scroll but prevent horizontal */
         }
 
         header {
@@ -36,7 +37,7 @@
             gap: 10px;
         }
 
-        .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; padding: 0 10px; }
 
         button { 
             padding: 10px 18px; 
@@ -47,6 +48,7 @@
             font-weight: bold; 
             transition: 0.2s;
             color: white;
+            touch-action: manipulation; /* Optimize for touch */
         }
 
         .add { background: var(--secondary); }
@@ -63,11 +65,13 @@
             border: 2px solid #ddd; 
             background: #fff; 
             cursor: default; 
-            touch-action: none; 
+            touch-action: none; /* CRITICAL: prevents page scroll while dragging on canvas */
             border-radius: 8px;
+            max-width: 100%;
+            height: auto;
         }
 
-        .tip { margin-top: 10px; font-size: 0.85rem; color: #7f8c8d; }
+        .tip { margin-top: 10px; font-size: 0.85rem; color: #7f8c8d; text-align: center; padding: 0 10px; }
     </style>
 </head>
 <body>
@@ -83,7 +87,7 @@
 </header>
 
 <canvas id="mc" width="900" height="600"></canvas>
-<div class="tip">Click to select/deselect items. Drag to move them around.</div>
+<div class="tip">Tap to select/deselect items. Drag to move them around.</div>
 
 <script>
 const canvas = document.getElementById('mc');
@@ -94,6 +98,7 @@ let isDragging = false;
 let dragTarget = null;
 let offset = { x: 0, y: 0 };
 let hasMoved = false;
+let dragStartPos = { x: 0, y: 0 }; // Track movement threshold for tap vs drag
 
 class StickItem {
     constructor(type, x, y, count = 1) {
@@ -170,6 +175,35 @@ class StickItem {
     }
 }
 
+// Helper to get coordinates from both mouse and touch events
+function getCanvasCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    
+    if (e.touches) {
+        // Touch event
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else {
+        // Mouse event
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+    
+    // Scale coordinates if canvas is visually scaled (due to CSS max-width)
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    let canvasX = (clientX - rect.left) * scaleX;
+    let canvasY = (clientY - rect.top) * scaleY;
+    
+    // Clamp to canvas boundaries
+    canvasX = Math.min(Math.max(0, canvasX), canvas.width);
+    canvasY = Math.min(Math.max(0, canvasY), canvas.height);
+    
+    return { x: canvasX, y: canvasY };
+}
+
 function addStick() {
     items.push(new StickItem('stick', 150 + Math.random()*100, 150 + Math.random()*100));
     render();
@@ -238,15 +272,17 @@ function render() {
     items.forEach(item => item.draw());
 }
 
-// Mouse/Touch Interaction
-canvas.addEventListener('mousedown', e => {
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-
+// Unified start handler (mouse + touch)
+function onDragStart(e) {
+    e.preventDefault(); // Prevent default touch behavior (like scrolling)
+    
+    const { x: mx, y: my } = getCanvasCoords(e);
+    
     hasMoved = false;
     dragTarget = null;
+    dragStartPos = { x: mx, y: my };
 
+    // Find item from top (reverse order)
     for (let i = items.length - 1; i >= 0; i--) {
         if (items[i].contains(mx, my)) {
             dragTarget = items[i];
@@ -260,26 +296,50 @@ canvas.addEventListener('mousedown', e => {
         }
     }
     render();
-});
+}
 
-window.addEventListener('mousemove', e => {
-    if (isDragging && dragTarget) {
-        const rect = canvas.getBoundingClientRect();
-        dragTarget.x = e.clientX - rect.left - offset.x;
-        dragTarget.y = e.clientY - rect.top - offset.y;
+// Unified move handler
+function onDragMove(e) {
+    if (!isDragging || !dragTarget) return;
+    
+    e.preventDefault(); // Prevent scrolling while dragging
+    
+    const { x: mx, y: my } = getCanvasCoords(e);
+    
+    // Check if we've moved enough to consider it a drag (avoid accidental taps)
+    const dx = Math.abs(mx - dragStartPos.x);
+    const dy = Math.abs(my - dragStartPos.y);
+    if (dx > 5 || dy > 5) {
         hasMoved = true;
+    }
+    
+    if (hasMoved) {
+        dragTarget.x = mx - offset.x;
+        dragTarget.y = my - offset.y;
         render();
     }
-});
+}
 
-window.addEventListener('mouseup', () => {
+// Unified end handler
+function onDragEnd(e) {
     if (!hasMoved && dragTarget) {
+        // Tap / click: toggle selection
         dragTarget.selected = !dragTarget.selected;
     }
     isDragging = false;
     dragTarget = null;
     render();
-});
+}
+
+// === MOUSE EVENTS ===
+canvas.addEventListener('mousedown', onDragStart);
+window.addEventListener('mousemove', onDragMove);
+window.addEventListener('mouseup', onDragEnd);
+
+// === TOUCH EVENTS ===
+canvas.addEventListener('touchstart', onDragStart, { passive: false });
+window.addEventListener('touchmove', onDragMove, { passive: false });
+window.addEventListener('touchend', onDragEnd);
 
 // Start with a small default set
 for(let i=0; i<3; i++) addStick();

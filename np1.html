@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Blok Nilai Tempat - Representasi Dua Desimal</title>
     <style>
         * { user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -16,14 +16,10 @@
             background: #fef3da; border-radius: 64px; padding: 20px;
             box-shadow: 0 30px 35px rgba(0, 0, 0, 0.3);
         }
-        canvas { display: block; 
-                margin: 0 auto; 
-                border-radius: 48px; 
-                cursor: grab;
-                touch-action: none; 
-                max-width: 100%; /* Agar tidak meluap keluar layar HP */
-                height: auto;    /* Menjaga rasio */
-               }
+        canvas { 
+            display: block; margin: 0 auto; border-radius: 48px; 
+            cursor: grab; touch-action: none; max-width: 100%; height: auto;
+        }
         .info-panel {
             text-align: center; margin-top: 18px; font-size: 1rem; font-weight: bold;
             background: #e9f5e1; display: inline-block; padding: 6px 20px;
@@ -41,7 +37,7 @@
         <div class="info-panel">📦 Tarik blok ke tabel sesuai nilai tempatnya.</div>
         <div class="info-panel">🇮🇩 Format Indonesia (Koma Desimal)</div>
     </div>
-    <footer>Gunakan tombol di atas/bawah untuk manipulasi data.</footer>
+    <footer>✨ Gunakan mode landscape di HP untuk tampilan terbaik.</footer>
 </div>
 
 <script>
@@ -77,37 +73,29 @@
     };
     
     let blocks = [];  let historyStack = []; let draggingBlock = null;
-    let targetNumber = 0; let showCelebration = false;
+    let targetNumber = 0;
 
     const clearRect = { x: 50, y: 700, w: 100, h: 50 };
     const undoRect = { x: 1035, y: 16, w: 150, h: 66 };
     const nextRect = { x: 178, y: 700, w: 100, h: 50 };
     
     const sourceBlocks = [
-        { type: "puluhan", val: 10, x: 50, y: 50, w: 80, h: 80 },
-        { type: "satuan", val: 1, x: 215, y: 50, w: 80, h: 80 },
-        { type: "persepuluh", val: 0.1, x: 390, y: 50, w: 30, h: 100 },
-        { type: "perseratus", val: 0.01, x: 480, y: 80, w: 40, h: 40 }
+        { type: "puluhan", val: 10, x: 50, y: 50, w: 80, h: 80, label: "Puluhan" },
+        { type: "satuan", val: 1, x: 215, y: 50, w: 80, h: 80, label: "Satuan" },
+        { type: "persepuluh", val: 0.1, x: 390, y: 50, w: 30, h: 100, label: "Sepersepuluhan" },
+        { type: "perseratus", val: 0.01, x: 480, y: 80, w: 40, h: 40, label: "Seperseratusan" }
     ];
 
     function saveToHistory() { historyStack.push(blocks.map(b => ({...b}))); }
-    function undo() { if (historyStack.length) { blocks = historyStack.pop(); showCelebration = false; } }
-    function clearAll() { saveToHistory(); blocks = []; showCelebration = false; }
+    function undo() { if (historyStack.length) { blocks = historyStack.pop(); } }
+    function clearAll() { saveToHistory(); blocks = []; }
     function newQuestion() { 
         saveToHistory(); blocks = [];
         targetNumber = Math.round((Math.floor(Math.random() * 9999) + 1) / 100 * 100) / 100;
-        showCelebration = false;
     }
 
     function onMouseDown(e) {
         const rect = canvas.getBoundingClientRect();
-
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-    
-        let mouseX = (e.clientX - rect.left) * scaleX;
-        let mouseY = (e.clientY - rect.top) * scaleY;
-        
         const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
         const my = (e.clientY - rect.top) * (canvas.height / rect.height);
         
@@ -116,7 +104,7 @@
         if (mx > nextRect.x && mx < nextRect.x+nextRect.w && my > nextRect.y && my < nextRect.y+nextRect.h) return newQuestion();
         
         const sb = sourceBlocks.find(s => mx >= s.x && mx <= s.x+s.w && my >= s.y && my <= s.y+s.h);
-        if (sb) draggingBlock = { ...sb, ox: mx-sb.x, oy: my-sb.y, cx: mx-sb.w/2, cy: my-sb.h/2 };
+        if (sb) draggingBlock = { ...sb, cx: mx-sb.w/2, cy: my-sb.h/2 };
     }
 
     function onMouseMove(e) {
@@ -154,18 +142,16 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#fdf8ed"; ctx.fillRect(0,0,canvas.width,canvas.height);
 
-        // Header & Target (Angka yang diminta)
+        // Header & Target
         ctx.fillStyle = "#2c3a2b"; ctx.font = "bold 30px 'Segoe UI'";
         ctx.fillText("Representasikan:", 550, 85);
         ctx.font = "bold 48px 'Courier New'"; ctx.fillStyle = "#1b4d3e";
         ctx.fillText(targetNumber.toFixed(2).replace('.',','), 790, 140);
 
-        // --- FITUR PENGHITUNG OTOMATIS ---
+        // Fitur Penghitung
         const currentTotal = Math.round(blocks.reduce((sum, b) => sum + b.val, 0) * 100) / 100;
         ctx.fillStyle = "#5c3e1f"; ctx.font = "bold 24px 'Segoe UI'";
         ctx.fillText("Total di Papan:", 100, 205); 
-        
-        // Warna berubah jadi Hijau jika sudah benar, Orange jika belum pas
         ctx.fillStyle = (Math.abs(currentTotal - targetNumber) < 0.001) ? "#27ae60" : "#d35400";
         ctx.font = "bold 32px 'Courier New'";
         ctx.fillText(currentTotal.toFixed(2).replace('.', ','), 310, 207);
@@ -178,32 +164,23 @@
             ctx.fillText(col.label, col.x+10, col.y+30);
         }
 
-        // Koma (Posisi di antara Satuan dan Persepuluhan)
+        // Koma
         ctx.fillStyle = "#bd7a42"; ctx.beginPath(); ctx.arc(574, 318, 12, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = "white"; ctx.font = "bold 24px sans-serif"; ctx.fillText(",", 568, 327);
 
-        // Gambar Blok
+        // Gambar Blok di Tabel
         blocks.forEach(b => drawImg(ctx, b.type, b.x, b.y, b.w, b.h));
-        sourceBlocks.forEach(s => drawImg(ctx, s.type, s.x, s.y, s.w, s.h));
-        
-        // Tambahkan Label di bawah gambar
-        ctx.fillStyle = "#5c3e1f";
-        ctx.font = "bold 14px 'Segoe UI'";
-        ctx.textAlign = "center";
-    
-        // Tentukan teks label berdasarkan tipe
-        let labelText = "";
-        if (s.type === "puluhan") labelText = "Puluhan";
-        else if (s.type === "satuan") labelText = "Satuan";
-        else if (s.type === "persepuluh") labelText = "Sepersepuluhan";
-        else if (s.type === "perseratus") labelText = "Seperseratusan";
 
-        // Gambar teks di tengah-tengah posisi blok (s.x + lebar/2)
-        ctx.fillText(labelText, s.x + (s.w / 2), s.y + s.h + 20);
-    
-        // Kembalikan textAlign ke awal agar tidak merusak teks lain
-        ctx.textAlign = "left";
-        
+        // Gambar Palet & Label (Perbaikan Loop)
+        sourceBlocks.forEach(s => {
+            drawImg(ctx, s.type, s.x, s.y, s.w, s.h);
+            ctx.fillStyle = "#5c3e1f";
+            ctx.font = "bold 14px 'Segoe UI'";
+            ctx.textAlign = "center";
+            ctx.fillText(s.label, s.x + (s.w / 2), s.y + s.h + 20);
+            ctx.textAlign = "left";
+        });
+
         if (draggingBlock) drawImg(ctx, draggingBlock.type, draggingBlock.cx, draggingBlock.cy, draggingBlock.w, draggingBlock.h);
 
         // Tombol-Tombol
@@ -217,31 +194,25 @@
         ctx.fillStyle = "#3f729b"; ctx.fillRect(nextRect.x, nextRect.y, nextRect.w, nextRect.h);
         ctx.fillStyle = "white"; ctx.fillText("Next", nextRect.x+20, nextRect.y+38);
 
-        // Selebrasi jika benar
         if (Math.abs(currentTotal - targetNumber) < 0.001) {
             ctx.fillStyle = "#e67e22"; ctx.font = "bold 40px 'Segoe UI'";
             ctx.fillText("🎉 BENAR! 🎉", 500, 560);
         }
-
         requestAnimationFrame(draw);
     }
-    // --- BRIDGE UNTUK TOUCH SCREEN (HP) ---
+
+    // BRIDGE TOUCH SCREEN
     function handleTouch(e) {
-        if (e.touches.length > 1) return; // Abaikan jika lebih dari 1 jari
+        if (e.touches.length > 1) return;
         const touch = e.touches[0];
-        const mouseEvent = new MouseEvent({
-            touchstart: "mousedown",
-            touchmove: "mousemove",
-            touchend: "mouseup"
-        }[e.type], {
-            clientX: touch.clientX,
-            clientY: touch.clientY
+        const rect = canvas.getBoundingClientRect();
+        const typeMap = { "touchstart": "mousedown", "touchmove": "mousemove", "touchend": "mouseup" };
+        const mouseEvent = new MouseEvent(typeMap[e.type], {
+            clientX: touch.clientX, clientY: touch.clientY
         });
         canvas.dispatchEvent(mouseEvent);
         if (e.type !== "touchend") e.preventDefault(); 
     }
-
-    // Daftarkan event touch ke canvas
     canvas.addEventListener("touchstart", handleTouch, { passive: false });
     window.addEventListener("touchmove", handleTouch, { passive: false });
     window.addEventListener("touchend", handleTouch, { passive: false });

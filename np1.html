@@ -16,7 +16,14 @@
             background: #fef3da; border-radius: 64px; padding: 20px;
             box-shadow: 0 30px 35px rgba(0, 0, 0, 0.3);
         }
-        canvas { display: block; margin: 0 auto; border-radius: 48px; cursor: grab; }
+        canvas { display: block; 
+                margin: 0 auto; 
+                border-radius: 48px; 
+                cursor: grab;
+                touch-action: none; 
+                max-width: 100%; /* Agar tidak meluap keluar layar HP */
+                height: auto;    /* Menjaga rasio */
+               }
         .info-panel {
             text-align: center; margin-top: 18px; font-size: 1rem; font-weight: bold;
             background: #e9f5e1; display: inline-block; padding: 6px 20px;
@@ -94,6 +101,13 @@
 
     function onMouseDown(e) {
         const rect = canvas.getBoundingClientRect();
+
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+    
+        let mouseX = (e.clientX - rect.left) * scaleX;
+        let mouseY = (e.clientY - rect.top) * scaleY;
+        
         const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
         const my = (e.clientY - rect.top) * (canvas.height / rect.height);
         
@@ -192,7 +206,27 @@
 
         requestAnimationFrame(draw);
     }
+    // --- BRIDGE UNTUK TOUCH SCREEN (HP) ---
+    function handleTouch(e) {
+        if (e.touches.length > 1) return; // Abaikan jika lebih dari 1 jari
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent({
+            touchstart: "mousedown",
+            touchmove: "mousemove",
+            touchend: "mouseup"
+        }[e.type], {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+        if (e.type !== "touchend") e.preventDefault(); 
+    }
 
+    // Daftarkan event touch ke canvas
+    canvas.addEventListener("touchstart", handleTouch, { passive: false });
+    window.addEventListener("touchmove", handleTouch, { passive: false });
+    window.addEventListener("touchend", handleTouch, { passive: false });
+    
     function init() { newQuestion(); draw(); }
 })();
 </script>

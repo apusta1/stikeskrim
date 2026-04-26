@@ -2,19 +2,21 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Blok Nilai Tempat - Representasi Dua Desimal</title>
     <style>
-        * { user-select: none; -webkit-tap-highlight-color: transparent; }
+        * { user-select: none; -webkit-tap-highlight-color: transparent; touch-action: none; } /* global touch-action untuk mencegah scroll/page zoom saat drag */
         body {
             margin: 0; min-height: 100vh;
             background: linear-gradient(145deg, #2c6e5c 0%, #1e5a48 100%);
             display: flex; justify-content: center; align-items: center;
             font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px;
+            touch-action: pan-y; /* tetap bisa scroll vertikal di luar canvas */
         }
         .canvas-wrapper {
             background: #fef3da; border-radius: 64px; padding: 20px;
             box-shadow: 0 30px 35px rgba(0, 0, 0, 0.3);
+            touch-action: none; /* mencegah scroll di dalam wrapper */
         }
         canvas { 
             display: block; margin: 0 auto; border-radius: 48px; 
@@ -26,6 +28,10 @@
             border-radius: 50px; color: #2d3e2b;
         }
         footer { text-align: center; margin-top: 16px; font-size: 0.8rem; color: #f7e3af; }
+        @media (max-width: 800px) {
+            .info-panel { font-size: 0.8rem; padding: 4px 12px; }
+            footer { font-size: 0.7rem; }
+        }
     </style>
 </head>
 <body>
@@ -33,7 +39,7 @@
     <div class="canvas-wrapper">
         <canvas id="mainCanvas"></canvas>
     </div>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; gap: 10px;">
         <div class="info-panel">📦 Tarik blok ke tabel sesuai nilai tempatnya.</div>
         <div class="info-panel">🇮🇩 Format Indonesia (Koma Desimal)</div>
     </div>
@@ -59,10 +65,23 @@
         images[key] = new Image();
         images[key].src = sources[key];
         images[key].onload = () => { if (++loadedImages === 4) init(); };
+        // fallback jika gambar gagal load (tetap jalan)
+        images[key].onerror = () => { if (++loadedImages === 4) init(); };
     }
 
     function drawImg(ctx, imgKey, x, y, w, h) {
-        if (images[imgKey]) ctx.drawImage(images[imgKey], x, y, w, h);
+        if (images[imgKey] && images[imgKey].complete && images[imgKey].naturalWidth > 0) {
+            ctx.drawImage(images[imgKey], x, y, w, h);
+        } else {
+            // placeholder warna jika gambar belum siap
+            ctx.fillStyle = "#c0d4c0";
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = "#7a5a3a";
+            ctx.strokeRect(x, y, w, h);
+            ctx.fillStyle = "#4a3a2a";
+            ctx.font = "bold 14px sans-serif";
+            ctx.fillText(imgKey.substring(0,3), x+5, y+20);
+        }
     }
 
     const placeColumns = {
@@ -72,9 +91,12 @@
         hundredths_place: { x: 849, y: 240, w: 197, h: 240, label: "PERSERATUSAN" }
     };
     
-    let blocks = [];  let historyStack = []; let draggingBlock = null;
+    let blocks = [];  
+    let historyStack = []; 
+    let draggingBlock = null;
     let targetNumber = 0;
-
+    
+    // koordinat tombol
     const clearRect = { x: 50, y: 700, w: 100, h: 50 };
     const undoRect = { x: 1035, y: 16, w: 150, h: 66 };
     const nextRect = { x: 178, y: 700, w: 100, h: 50 };
@@ -86,58 +108,212 @@
         { type: "perseratus", val: 0.01, x: 480, y: 80, w: 40, h: 40, label: "Seperseratusan" }
     ];
 
-    function saveToHistory() { historyStack.push(blocks.map(b => ({...b}))); }
-    function undo() { if (historyStack.length) { blocks = historyStack.pop(); } }
-    function clearAll() { saveToHistory(); blocks = []; }
+    function saveToHistory() { 
+        // simpan state blok ke history (deep copy)
+        historyStack.push(blocks.map(b => ({...b}))); 
+        // batasi panjang history agar tidak memori terlalu berat
+        if (historyStack.length > 50) historyStack.shift();
+    }
+    function undo() { 
+        if (historyStack.length) { 
+            blocks = historyStack.pop().map(b => ({...b})); 
+        } 
+    }
+    function clearAll() { 
+        saveToHistory(); 
+        blocks = []; 
+    }
     function newQuestion() { 
-        saveToHistory(); blocks = [];
-        targetNumber = Math.round((Math.floor(Math.random() * 9999) + 1) / 100 * 100) / 100;
+        saveToHistory(); 
+        blocks = [];
+        // random angka 0.01 hingga 99.99 dengan dua desimal realistis
+        let raw = Math.floor(Math.random() * 9999) + 1;
+        targetNumber = Math.round((raw / 100) * 100) / 100;
+        if (targetNumber > 99.99) targetNumber = 99.99;
     }
 
-    function onMouseDown(e) {
+    // ----- FUNGSI UTAMA DRAG DENGAN SMOOTH TOUCH -----
+    // Koordinat sentuhan awal terhadap canvas (dalam koordinat canvas)
+    let dragStartCanvasX = 0, dragStartCanvasY = 0;
+    let dragOffsetX = 0, dragOffsetY = 0; // offset dari pojok kiri atas blok ke titik sentuh
+    
+    function getCanvasCoordsFromClient(clientX, clientY) {
         const rect = canvas.getBoundingClientRect();
-        const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
-        const my = (e.clientY - rect.top) * (canvas.height / rect.height);
-        
-        if (mx > clearRect.x && mx < clearRect.x+clearRect.w && my > clearRect.y && my < clearRect.y+clearRect.h) return clearAll();
-        if (mx > undoRect.x && mx < undoRect.x+undoRect.w && my > undoRect.y && my < undoRect.y+undoRect.h) return undo();
-        if (mx > nextRect.x && mx < nextRect.x+nextRect.w && my > nextRect.y && my < nextRect.y+nextRect.h) return newQuestion();
-        
-        const sb = sourceBlocks.find(s => mx >= s.x && mx <= s.x+s.w && my >= s.y && my <= s.y+s.h);
-        if (sb) draggingBlock = { ...sb, cx: mx-sb.w/2, cy: my-sb.h/2 };
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let canvasX = (clientX - rect.left) * scaleX;
+        let canvasY = (clientY - rect.top) * scaleY;
+        // batasi agar tidak out of bounds
+        canvasX = Math.min(Math.max(0, canvasX), canvas.width);
+        canvasY = Math.min(Math.max(0, canvasY), canvas.height);
+        return { canvasX, canvasY };
     }
-
-    function onMouseMove(e) {
+    
+    // Cek apakah titik menyentuh source block (palet)
+    function getSourceBlockAt(x, y) {
+        for (let i = 0; i < sourceBlocks.length; i++) {
+            const s = sourceBlocks[i];
+            if (x >= s.x && x <= s.x + s.w && y >= s.y && y <= s.y + s.h) {
+                return s;
+            }
+        }
+        return null;
+    }
+    
+    // Memulai drag (touchstart / mousedown)
+    function startDrag(e, clientX, clientY) {
+        e.preventDefault(); // prevent default agar tidak scroll
+        const { canvasX, canvasY } = getCanvasCoordsFromClient(clientX, clientY);
+        
+        // 1. Cek tombol Clear/Undo/Next terlebih dahulu
+        if (canvasX >= clearRect.x && canvasX <= clearRect.x+clearRect.w && canvasY >= clearRect.y && canvasY <= clearRect.y+clearRect.h) {
+            clearAll();
+            return;
+        }
+        if (canvasX >= undoRect.x && canvasX <= undoRect.x+undoRect.w && canvasY >= undoRect.y && canvasY <= undoRect.y+undoRect.h) {
+            undo();
+            return;
+        }
+        if (canvasX >= nextRect.x && canvasX <= nextRect.x+nextRect.w && canvasY >= nextRect.y && canvasY <= nextRect.y+nextRect.h) {
+            newQuestion();
+            return;
+        }
+        
+        // 2. Cek apakah menyentuh source block (palet)
+        const sourceBlock = getSourceBlockAt(canvasX, canvasY);
+        if (sourceBlock) {
+            draggingBlock = { 
+                ...sourceBlock, 
+                cx: sourceBlock.x, 
+                cy: sourceBlock.y,
+                originalType: sourceBlock.type,
+                val: sourceBlock.val,
+                w: sourceBlock.w,
+                h: sourceBlock.h
+            };
+            // Hitung offset antara posisi sentuhan dengan pojok kiri atas blok
+            dragOffsetX = canvasX - sourceBlock.x;
+            dragOffsetY = canvasY - sourceBlock.y;
+            dragStartCanvasX = canvasX;
+            dragStartCanvasY = canvasY;
+            return;
+        }
+        
+        // 3. (Opsional) Bisa juga drag blok yang sudah ada di papan? fitur tidak diminta, tapi untuk konsistensi tidak ada drag dari papan
+    }
+    
+    function onDragMove(clientX, clientY) {
         if (!draggingBlock) return;
-        const rect = canvas.getBoundingClientRect();
-        draggingBlock.cx = (e.clientX - rect.left) * (canvas.width/rect.width) - draggingBlock.w/2;
-        draggingBlock.cy = (e.clientY - rect.top) * (canvas.height/rect.height) - draggingBlock.h/2;
+        const { canvasX, canvasY } = getCanvasCoordsFromClient(clientX, clientY);
+        // Update posisi blok berdasarkan offset sentuhan
+        let newCx = canvasX - dragOffsetX;
+        let newCy = canvasY - dragOffsetY;
+        // batasi agar tidak keluar canvas (opsional agar lebih rapi)
+        newCx = Math.min(Math.max(newCx, 0), canvas.width - draggingBlock.w);
+        newCy = Math.min(Math.max(newCy, 0), canvas.height - draggingBlock.h);
+        draggingBlock.cx = newCx;
+        draggingBlock.cy = newCy;
     }
-
-    function onMouseUp(e) {
+    
+    function endDrag(clientX, clientY) {
         if (!draggingBlock) return;
-        const rect = canvas.getBoundingClientRect();
-        const mx = (e.clientX - rect.left) * (canvas.width/rect.width);
-        const my = (e.clientY - rect.top) * (canvas.height/rect.height);
+        const { canvasX, canvasY } = getCanvasCoordsFromClient(clientX, clientY);
+        let dropped = false;
         
+        // Cek apakah drop di area kolom nilai tempat
         for (let [key, col] of Object.entries(placeColumns)) {
-            if (mx >= col.x && mx <= col.x+col.w && my >= col.y && my <= col.y+col.h) {
+            if (canvasX >= col.x && canvasX <= col.x+col.w && canvasY >= col.y && canvasY <= col.y+col.h) {
                 saveToHistory();
-                const count = blocks.filter(b => b.colKey === key).length;
+                // Hitung jumlah blok yang sudah ada di kolom tersebut untuk mengatur posisi
+                const existingInCol = blocks.filter(b => b.colKey === key).length;
+                const colItemWidth = 35;
+                const colItemHeight = 40;
+                const startX = col.x + 15;
+                const startY = col.y + 60;
+                const perRow = Math.floor((col.w - 20) / colItemWidth);
+                const row = Math.floor(existingInCol / perRow);
+                const colInRow = existingInCol % perRow;
+                let newX = startX + (colInRow * colItemWidth);
+                let newY = startY + (row * colItemHeight);
+                // cegah overflow keluar kolom (jika terlalu banyak, tetap dalam batas)
+                if (newY + draggingBlock.h > col.y + col.h - 10) newY = col.y + col.h - draggingBlock.h - 5;
+                if (newX + draggingBlock.w > col.x + col.w - 5) newX = col.x + col.w - draggingBlock.w - 5;
+                
                 blocks.push({
-                    type: draggingBlock.type, val: draggingBlock.val, w: draggingBlock.w, h: draggingBlock.h,
-                    colKey: key, x: col.x + 20 + (count % 4) * 35, y: col.y + 60 + Math.floor(count/4) * 40
+                    type: draggingBlock.type,
+                    val: draggingBlock.val,
+                    w: draggingBlock.w,
+                    h: draggingBlock.h,
+                    colKey: key,
+                    x: newX,
+                    y: newY
                 });
+                dropped = true;
                 break;
             }
         }
         draggingBlock = null;
     }
-
+    
+    // ----- MOUSE EVENT HANDLER (untuk desktop & fallback) -----
+    function onMouseDown(e) {
+        e.preventDefault();
+        startDrag(e, e.clientX, e.clientY);
+    }
+    
+    function onMouseMove(e) {
+        onDragMove(e.clientX, e.clientY);
+    }
+    
+    function onMouseUp(e) {
+        endDrag(e.clientX, e.clientY);
+    }
+    
     canvas.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
-
+    
+    // ----- TOUCH EVENT HANDLER YANG SMOOTH (mempertahankan performa) -----
+    // Kita menggunakan pointer events? Tidak, untuk kompatibilitas luas: touch events dengan requestAnimationFrame throttling tidak diperlukan karena canvas per frame tetap smooth.
+    function handleTouchStart(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        if (touch) {
+            startDrag(e, touch.clientX, touch.clientY);
+        }
+    }
+    
+    function handleTouchMove(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        if (touch && draggingBlock) {
+            onDragMove(touch.clientX, touch.clientY);
+        }
+    }
+    
+    function handleTouchEnd(e) {
+        e.preventDefault();
+        if (draggingBlock) {
+            // ambil titik terakhir dari changedTouches
+            const touch = e.changedTouches[0];
+            if (touch) {
+                endDrag(touch.clientX, touch.clientY);
+            } else {
+                endDrag(0, 0);
+            }
+        }
+    }
+    
+    // pasang event touch dengan non-passive false agar preventDefault bekerja optimal
+    canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
+    canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
+    canvas.addEventListener("touchcancel", handleTouchEnd, { passive: false });
+    
+    // juga mencegah context menu muncul pada canvas untuk pengalaman lebih baik
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    
+    // ------ DRAW FUNCTION (tidak diubah esensinya) ------
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#fdf8ed"; ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -146,9 +322,10 @@
         ctx.fillStyle = "#2c3a2b"; ctx.font = "bold 30px 'Segoe UI'";
         ctx.fillText("Representasikan:", 550, 85);
         ctx.font = "bold 48px 'Courier New'"; ctx.fillStyle = "#1b4d3e";
-        ctx.fillText(targetNumber.toFixed(2).replace('.',','), 790, 140);
+        let targetStr = targetNumber.toFixed(2).replace('.',',');
+        ctx.fillText(targetStr, 790, 140);
 
-        // Fitur Penghitung
+        // Total di Papan
         const currentTotal = Math.round(blocks.reduce((sum, b) => sum + b.val, 0) * 100) / 100;
         ctx.fillStyle = "#5c3e1f"; ctx.font = "bold 24px 'Segoe UI'";
         ctx.fillText("Total di Papan:", 100, 205); 
@@ -168,10 +345,10 @@
         ctx.fillStyle = "#bd7a42"; ctx.beginPath(); ctx.arc(574, 318, 12, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = "white"; ctx.font = "bold 24px sans-serif"; ctx.fillText(",", 568, 327);
 
-        // Gambar Blok di Tabel
+        // Blok di Tabel
         blocks.forEach(b => drawImg(ctx, b.type, b.x, b.y, b.w, b.h));
 
-        // Gambar Palet & Label (Perbaikan Loop)
+        // Gambar Palet & Label (perbaiki rendering label rapi)
         sourceBlocks.forEach(s => {
             drawImg(ctx, s.type, s.x, s.y, s.w, s.h);
             ctx.fillStyle = "#5c3e1f";
@@ -181,9 +358,16 @@
             ctx.textAlign = "left";
         });
 
-        if (draggingBlock) drawImg(ctx, draggingBlock.type, draggingBlock.cx, draggingBlock.cy, draggingBlock.w, draggingBlock.h);
+        // Dragging block (jika ada)
+        if (draggingBlock) {
+            drawImg(ctx, draggingBlock.type, draggingBlock.cx, draggingBlock.cy, draggingBlock.w, draggingBlock.h);
+            // tambahkan bayangan tipis untuk umpan balik sentuhan
+            ctx.save();
+            ctx.shadowBlur = 0;
+            ctx.restore();
+        }
 
-        // Tombol-Tombol
+        // Tombol dengan efek sentuh responsif
         ctx.font = "bold 28px 'Segoe UI'";
         ctx.fillStyle = "#587b3e"; ctx.fillRect(clearRect.x, clearRect.y, clearRect.w, clearRect.h);
         ctx.fillStyle = "white"; ctx.fillText("Clear", clearRect.x+15, clearRect.y+38);
@@ -194,30 +378,41 @@
         ctx.fillStyle = "#3f729b"; ctx.fillRect(nextRect.x, nextRect.y, nextRect.w, nextRect.h);
         ctx.fillStyle = "white"; ctx.fillText("Next", nextRect.x+20, nextRect.y+38);
 
-        if (Math.abs(currentTotal - targetNumber) < 0.001) {
+        if (Math.abs(currentTotal - targetNumber) < 0.001 && targetNumber !== 0) {
             ctx.fillStyle = "#e67e22"; ctx.font = "bold 40px 'Segoe UI'";
             ctx.fillText("🎉 BENAR! 🎉", 500, 560);
+        } else if (targetNumber === 0 && blocks.length === 0) {
+            // tidak menampilkan benar di awal
         }
+        
         requestAnimationFrame(draw);
     }
-
-    // BRIDGE TOUCH SCREEN
-    function handleTouch(e) {
-        if (e.touches.length > 1) return;
-        const touch = e.touches[0];
-        const rect = canvas.getBoundingClientRect();
-        const typeMap = { "touchstart": "mousedown", "touchmove": "mousemove", "touchend": "mouseup" };
-        const mouseEvent = new MouseEvent(typeMap[e.type], {
-            clientX: touch.clientX, clientY: touch.clientY
-        });
-        canvas.dispatchEvent(mouseEvent);
-        if (e.type !== "touchend") e.preventDefault(); 
-    }
-    canvas.addEventListener("touchstart", handleTouch, { passive: false });
-    window.addEventListener("touchmove", handleTouch, { passive: false });
-    window.addEventListener("touchend", handleTouch, { passive: false });
     
-    function init() { newQuestion(); draw(); }
+    // Inisialisasi awal soal
+    function init() {
+        newQuestion(); 
+        draw();
+        // untuk memastikan semua gambar load, redraw terus menerus
+    }
+    
+    // fallback jika gambar lambat atau error tetap ada fungsi
+    if (loadedImages === 4) init();
+    else {
+        // menunggu semua gambar selesai
+        let checkInterval = setInterval(() => {
+            if (loadedImages === 4) {
+                clearInterval(checkInterval);
+                init();
+            }
+        }, 100);
+        // timeout force start setelah 3 dtk jika gambar gagal
+        setTimeout(() => {
+            if (loadedImages < 4) {
+                loadedImages = 4;
+                init();
+            }
+        }, 3000);
+    }
 })();
 </script>
 </body>

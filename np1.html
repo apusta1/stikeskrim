@@ -185,6 +185,25 @@
         // Gambar Blok
         blocks.forEach(b => drawImg(ctx, b.type, b.x, b.y, b.w, b.h));
         sourceBlocks.forEach(s => drawImg(ctx, s.type, s.x, s.y, s.w, s.h));
+        
+        // Tambahkan Label di bawah gambar
+        ctx.fillStyle = "#5c3e1f";
+        ctx.font = "bold 14px 'Segoe UI'";
+        ctx.textAlign = "center";
+    
+        // Tentukan teks label berdasarkan tipe
+        let labelText = "";
+        if (s.type === "puluhan") labelText = "Puluhan";
+        else if (s.type === "satuan") labelText = "Satuan";
+        else if (s.type === "persepuluh") labelText = "Sepersepuluhan";
+        else if (s.type === "perseratus") labelText = "Seperseratusan";
+
+        // Gambar teks di tengah-tengah posisi blok (s.x + lebar/2)
+        ctx.fillText(labelText, s.x + (s.w / 2), s.y + s.h + 20);
+    
+        // Kembalikan textAlign ke awal agar tidak merusak teks lain
+        ctx.textAlign = "left";
+        
         if (draggingBlock) drawImg(ctx, draggingBlock.type, draggingBlock.cx, draggingBlock.cy, draggingBlock.w, draggingBlock.h);
 
         // Tombol-Tombol

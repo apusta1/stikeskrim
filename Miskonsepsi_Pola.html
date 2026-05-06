@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Miskonsepsi Pola | Pada Anak SD</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #eef2f7 0%, #dae5ed 100%);
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+            line-height: 1.5;
+            padding: 2rem 1.8rem;
+            color: #1a2c3e;
+        }
+
+        /* container utama: susunan vertikal (bukan grid multi-kolom) */
+        .cards-vertical {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.6rem;
+        }
+
+        /* setia card: tampilan horizontal (flex row) */
+        .card-horizontal {
+            background: #ffffff;
+            border-radius: 1.8rem;
+            box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .card-horizontal:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 28px -12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* area nomor (side badge) */
+        .card-number {
+            background: #f3b33d;
+            min-width: 85px;
+            width: 85px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 2.2rem;
+            color: white;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+            letter-spacing: 1px;
+            border-radius: 1.8rem 0 0 1.8rem;
+        }
+
+        /* konten utama teks (mengisi sisa ruang) */
+        .card-content {
+            flex: 1;
+            padding: 1.3rem 1.6rem 1.3rem 1.6rem;
+            background: #ffffff;
+        }
+
+        /* gaya teks asli: tetap mempertahankan semua teks, emoji, panah */
+        .card-content p {
+            margin-bottom: 0.75rem;
+            font-size: 0.98rem;
+            color: #1f2f3a;
+        }
+
+        .card-content strong {
+            color: #b64926;
+            font-weight: 700;
+        }
+
+        .card-content em {
+            font-style: italic;
+            color: #2c6e6e;
+        }
+
+        /* insight / panah penjelasan */
+        .insight {
+            background: #fef3e2;
+            padding: 0.5rem 0.9rem;
+            border-radius: 1.2rem;
+            margin: 0.7rem 0 0 0;
+            font-size: 0.92rem;
+            border-left: 5px solid #f3b33d;
+            color: #2c4b32;
+        }
+
+        .example-pola {
+            background: #f2f6fc;
+            padding: 0.4rem 0.8rem;
+            border-radius: 1rem;
+            font-family: 'SF Mono', 'Cascadia Code', monospace;
+            font-size: 1.05rem;
+            letter-spacing: 1px;
+            margin: 0.5rem 0;
+            display: inline-block;
+            width: auto;
+            border-left: 3px solid #f3b33d;
+        }
+
+        /* responsif: pada layar kecil, card berubah jadi kolom agar tetap nyaman */
+        @media (max-width: 700px) {
+            body {
+                padding: 1.2rem;
+            }
+            .card-horizontal {
+                flex-direction: column;
+                border-radius: 1.5rem;
+            }
+            .card-number {
+                min-width: 100%;
+                width: 100%;
+                border-radius: 1.5rem 1.5rem 0 0;
+                padding: 0.7rem 0;
+                font-size: 1.8rem;
+            }
+            .card-content {
+                padding: 1.2rem;
+            }
+        }
+
+        /* gaya untuk teks pembuka (di atas) */
+        .intro-wrapper {
+            max-width: 1100px;
+            margin: 0 auto 2rem auto;
+            background: #fffcf2;
+            border-radius: 2rem;
+            padding: 1.4rem 2rem;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.05);
+            border-left: 8px solid #f3b33d;
+            border-right: 1px solid #ffe6c7;
+        }
+
+        .intro-text {
+            font-size: 1.05rem;
+            color: #1e3a4d;
+            line-height: 1.5;
+        }
+
+        /* pemisah visual */
+        hr {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<!-- TEKS AWAL (dipindah ke atas, tanpa perubahan redaksional) -->
+<div class="intro-wrapper">
+    <div class="intro-text">
+        Salah satu hal penting yang perlu diperhatikan saat mengajarkan pola, adalah <strong>mengenali potensi miskonsepsi</strong> anak terhadap pola. Miskonsepsi tentang pola pada anak SD cukup umum terjadi karena mereka masih berada pada tahap transisi dari berpikir konkret ke semi-abstrak. Pola bukan hanya soal “mengulang bentuk,” tetapi juga tentang mengenali aturan yang mendasarinya. Berikut beberapa contoh miskonsepsi yang sering muncul, beserta ilustrasinya:
+    </div>
+</div>
+
+<div class="cards-vertical">
+    
+    <!-- 1. Menganggap semua pola pasti berulang -->
+    <div class="card-horizontal">
+        <div class="card-number">1</div>
+        <div class="card-content">
+            <p><strong>Menganggap semua pola pasti berulang</strong><br>
+            Anak sering berpikir bahwa pola selalu seperti:<br>
+            🔴🔵🔴🔵🔴🔵</p>
+            <p>Ketika diberi pola seperti:<br>
+            2, 4, 6, 8, ...</p>
+            <p>Mereka bisa bingung, atau malah mencoba menjawab:<br>
+            2, 4, 6, 8, 2, 4 (mengulang)</p>
+            <div class="insight">➡️ Padahal ini adalah pola bertumbuh, bukan pola berulang.</div>
+        </div>
+    </div>
+
+    <!-- 2. Fokus pada tampilan, bukan aturan -->
+    <div class="card-horizontal">
+        <div class="card-number">2</div>
+        <div class="card-content">
+            <p><strong>Fokus pada tampilan, bukan aturan</strong><br>
+            Misalnya pola:<br>
+            ⬛⬜⬛⬜⬛⬜</p>
+            <p>Lalu diubah jadi:<br>
+            🔺🔵🔺🔵🔺🔵</p>
+            <p>Anak mungkin tidak mengenali bahwa ini pola yang sama (ABAB), karena bentuknya berbeda.<br>
+            ➡️ Mereka belum menangkap struktur abstraknya, hanya melihat “permukaan”.</p>
+        </div>
+    </div>
+
+    <!-- 3. Salah menentukan unit pola -->
+    <div class="card-horizontal">
+        <div class="card-number">3</div>
+        <div class="card-content">
+            <p><strong>Salah menentukan unit pola</strong><br>
+            Contoh:<br>
+            🍎🍎🍌🍎🍎🍌</p>
+            <p>Sebagian anak menganggap polanya adalah:<br>
+            🍎🍎🍌🍎🍎🍌 (satu blok panjang)</p>
+            <p>Padahal unit dasarnya adalah:<br>
+            🍎🍎🍌</p>
+            <div class="insight">➡️ Ini penting karena berkaitan dengan kemampuan memprediksi kelanjutan pola.</div>
+        </div>
+    </div>
+
+    <!-- 4. Kesulitan pada pola bertumbuh -->
+    <div class="card-horizontal">
+        <div class="card-number">4</div>
+        <div class="card-content">
+            <p><strong>Kesulitan pada pola bertumbuh</strong><br>
+            Contoh:<br>
+            1, 3, 5, 7, ...</p>
+            <p>Anak bisa menjawab:<br>
+            1, 3, 5, 7, 9, 11 (benar)</p>
+            <p>Tetapi ketika ditanya: “Mengapa?”<br>
+            Mereka menjawab: “Karena kelihatannya begitu.”</p>
+            <div class="insight">➡️ Artinya mereka belum memahami aturan +2, hanya menebak berdasarkan intuisi visual.</div>
+        </div>
+    </div>
+
+    <!-- 5. Generalisasi terlalu cepat -->
+    <div class="card-horizontal">
+        <div class="card-number">5</div>
+        <div class="card-content">
+            <p><strong>Generalisasi yang terlalu cepat</strong><br>
+            Jika anak sering melihat pola +2, mereka bisa menganggap semua pola angka seperti itu.</p>
+            <p>Contoh:<br>
+            3, 6, 9, 12, ...</p>
+            <p>Sebagian anak menjawab:<br>
+            15 (benar), tetapi alasannya: “Tambah 2”</p>
+            <div class="insight">➡️ Jawaban benar, tetapi konsepnya salah (seharusnya +3).</div>
+        </div>
+    </div>
+
+    <!-- 6. Kesulitan berpindah konkret ke simbolik -->
+    <div class="card-horizontal">
+        <div class="card-number">6</div>
+        <div class="card-content">
+            <p><strong>Kesulitan berpindah dari konkret ke simbolik</strong><br>
+            Pola gambar:<br>
+            ⭐ ⭐⭐ ⭐⭐⭐</p>
+            <p>Anak bisa melanjutkan: ⭐⭐⭐⭐</p>
+            <p>Tetapi jika ditulis sebagai:<br>
+            1, 2, 3, ...</p>
+            <p>Mereka tidak langsung menghubungkan keduanya.<br>
+            ➡️ Ini menunjukkan representasi simbolik belum kuat.</p>
+        </div>
+    </div>
+
+    <!-- 7. Mengira pola harus “teratur sempurna” -->
+    <div class="card-horizontal">
+        <div class="card-number">7</div>
+        <div class="card-content">
+            <p><strong>Mengira pola harus “teratur sempurna”</strong><br>
+            Ketika diberikan pola seperti:<br>
+            2, 5, 8, 11, ...</p>
+            <p>Anak bisa menganggap ini “bukan pola” karena tidak terlihat simetris atau berulang.<br>
+            ➡️ Mereka belum memahami bahwa pola bisa berbasis operasi numerik.</p>
+        </div>
+    </div>
+
+    <!-- 8. Kesalahan memprediksi langkah jauh (n-th term) -->
+    <div class="card-horizontal">
+        <div class="card-number">8</div>
+        <div class="card-content">
+            <p><strong>Kesalahan dalam memprediksi langkah jauh</strong><br>
+            Diberi pola:<br>
+            2, 4, 6, 8, ...</p>
+            <p>Ditanya: angka ke-10?</p>
+            <p>Anak sering menghitung satu per satu, dan bisa salah hitung.<br>
+            ➡️ Mereka belum memahami generalisasi seperti “2 × n”.</p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

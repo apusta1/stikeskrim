@@ -139,14 +139,14 @@ class StickItem {
                 this.drawStick(ox, Math.abs(ox) * 0.12, rot);
             }
 
-            // KARET PENGIKAT SATU SAJA (di bagian atas)
+            // KARET PENGIKAT SATU DI POSISI TENGAH
             const bandWidth = this.w + 12;
             ctx.fillStyle = "#4caf50";
             ctx.strokeStyle = "#2e7d32";
             ctx.lineWidth = 4;
 
             ctx.beginPath();
-            ctx.roundRect(-bandWidth / 2, -this.h/2 + 15, bandWidth, 28, 8);
+            ctx.roundRect(-bandWidth / 2, -28, bandWidth, 28, 8);
             ctx.fill();
             ctx.stroke();
         }

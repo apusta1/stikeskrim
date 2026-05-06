@@ -109,8 +109,9 @@ class StickItem {
         this.selected = false;
         
         // DYNAMIC WIDTH: Adjusts based on the number of sticks inside
-        this.w = type === 'stick' ? 16 : 15 + (count * 6);
-        this.h = 90;
+        // DIPERBESAR: lebar stik dari 16 -> 22, tinggi dari 90 -> 120
+        this.w = type === 'stick' ? 22 : 22 + (count * 8);
+        this.h = 120; // DIPERBESAR: tinggi stik dari 90 menjadi 120
     }
 
     draw() {
@@ -135,20 +136,20 @@ class StickItem {
         } else {
             // Draw bundled sticks spread across the dynamic width
             for (let i = 0; i < this.count; i++) {
-                const ox = (i - (this.count - 1) / 2) * 6;
+                const ox = (i - (this.count - 1) / 2) * 8; // DIPERBESAR: jarak antar stik dalam bundle
                 const rot = (i - (this.count - 1) / 2) * 0.025;
                 this.drawStick(ox, Math.abs(ox) * 0.15, rot);
             }
 
             // DYNAMIC RUBBER BAND
             // It uses 'this.w' which scales with 'this.count'
-            const bandWidth = this.w + 4;
+            const bandWidth = this.w + 6;
             ctx.fillStyle = "#4caf50";
             ctx.strokeStyle = "#2e7d32";
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2.5; // DIPERBESAR: sedikit lebih tebal
 
             ctx.beginPath();
-            ctx.roundRect(-bandWidth / 2, -6, bandWidth, 14, 4);
+            ctx.roundRect(-bandWidth / 2, -8, bandWidth, 18, 5); // DIPERBESAR: karet pengikat
             ctx.fill();
             ctx.stroke();
         }
@@ -161,17 +162,18 @@ class StickItem {
         ctx.rotate(rot);
         ctx.fillStyle = "#ffeb3b";
         ctx.strokeStyle = "#fbc02d";
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 2; // DIPERBESAR: garis tepi lebih tebal
         ctx.beginPath();
-        ctx.roundRect(-7, -45, 14, 90, 5);
+        // DIPERBESAR: stik dari (-7,-45,14,90) menjadi (-10,-60,20,120)
+        ctx.roundRect(-10, -60, 20, 120, 7);
         ctx.fill();
         ctx.stroke();
         ctx.restore();
     }
 
     contains(mx, my) {
-        return mx > this.x - this.w/2 - 5 && mx < this.x + this.w/2 + 5 &&
-               my > this.y - this.h/2 - 5 && my < this.y + this.h/2 + 5;
+        return mx > this.x - this.w/2 - 6 && mx < this.x + this.w/2 + 6 &&
+               my > this.y - this.h/2 - 6 && my < this.y + this.h/2 + 6;
     }
 }
 

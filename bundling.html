@@ -23,7 +23,7 @@
             background: var(--bg); 
             margin: 0;
             overflow: hidden;
-            touch-action: pan-y pinch-zoom; /* Allow vertical scroll but prevent horizontal */
+            touch-action: pan-y pinch-zoom;
         }
 
         header {
@@ -48,7 +48,7 @@
             font-weight: bold; 
             transition: 0.2s;
             color: white;
-            touch-action: manipulation; /* Optimize for touch */
+            touch-action: manipulation;
         }
 
         .add { background: var(--secondary); }
@@ -65,7 +65,7 @@
             border: 2px solid #ddd; 
             background: #fff; 
             cursor: default; 
-            touch-action: none; /* CRITICAL: prevents page scroll while dragging on canvas */
+            touch-action: none;
             border-radius: 8px;
             max-width: 100%;
             height: auto;
@@ -86,7 +86,7 @@
     </div>
 </header>
 
-<canvas id="mc" width="900" height="600"></canvas>
+<canvas id="mc" width="1200" height="800"></canvas>
 <div class="tip">Tap to select/deselect items. Drag to move them around.</div>
 
 <script>
@@ -98,7 +98,7 @@ let isDragging = false;
 let dragTarget = null;
 let offset = { x: 0, y: 0 };
 let hasMoved = false;
-let dragStartPos = { x: 0, y: 0 }; // Track movement threshold for tap vs drag
+let dragStartPos = { x: 0, y: 0 };
 
 class StickItem {
     constructor(type, x, y, count = 1) {
@@ -108,10 +108,9 @@ class StickItem {
         this.count = count; 
         this.selected = false;
         
-        // DYNAMIC WIDTH: Adjusts based on the number of sticks inside
-        // DIPERBESAR: lebar stik dari 16 -> 22, tinggi dari 90 -> 120
-        this.w = type === 'stick' ? 22 : 22 + (count * 8);
-        this.h = 120; // DIPERBESAR: tinggi stik dari 90 menjadi 120
+        // DIPERBESAR 2x LIPAT: lebar stik 40, tinggi 240
+        this.w = type === 'stick' ? 40 : 40 + (count * 16);
+        this.h = 240;
     }
 
     draw() {
@@ -120,36 +119,40 @@ class StickItem {
 
         // Selection Highlight (Glow Effect)
         if (this.selected) {
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = "rgba(33, 150, 243, 0.7)";
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = "rgba(33, 150, 243, 0.8)";
             ctx.strokeStyle = "#2196f3";
-            ctx.lineWidth = 3;
-            // Draw a rounded selection box
+            ctx.lineWidth = 5;
             ctx.beginPath();
-            ctx.roundRect(-this.w/2 - 8, -this.h/2 - 8, this.w + 16, this.h + 16, 10);
+            ctx.roundRect(-this.w/2 - 12, -this.h/2 - 12, this.w + 24, this.h + 24, 15);
             ctx.stroke();
-            ctx.shadowBlur = 0; // Reset shadow so it doesn't affect sticks
+            ctx.shadowBlur = 0;
         }
 
         if (this.type === 'stick') {
             this.drawStick(0, 0);
         } else {
-            // Draw bundled sticks spread across the dynamic width
+            // Draw bundled sticks dengan jarak lebih lebar
             for (let i = 0; i < this.count; i++) {
-                const ox = (i - (this.count - 1) / 2) * 8; // DIPERBESAR: jarak antar stik dalam bundle
-                const rot = (i - (this.count - 1) / 2) * 0.025;
-                this.drawStick(ox, Math.abs(ox) * 0.15, rot);
+                const ox = (i - (this.count - 1) / 2) * 14;
+                const rot = (i - (this.count - 1) / 2) * 0.02;
+                this.drawStick(ox, Math.abs(ox) * 0.12, rot);
             }
 
-            // DYNAMIC RUBBER BAND
-            // It uses 'this.w' which scales with 'this.count'
-            const bandWidth = this.w + 6;
+            // KARET PENGIKAT yang lebih besar
+            const bandWidth = this.w + 12;
             ctx.fillStyle = "#4caf50";
             ctx.strokeStyle = "#2e7d32";
-            ctx.lineWidth = 2.5; // DIPERBESAR: sedikit lebih tebal
+            ctx.lineWidth = 4;
 
             ctx.beginPath();
-            ctx.roundRect(-bandWidth / 2, -8, bandWidth, 18, 5); // DIPERBESAR: karet pengikat
+            ctx.roundRect(-bandWidth / 2, -14, bandWidth, 28, 8);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Karet bagian bawah (opsional, lebih realistis)
+            ctx.beginPath();
+            ctx.roundRect(-bandWidth / 2, this.h/2 - 20, bandWidth, 28, 8);
             ctx.fill();
             ctx.stroke();
         }
@@ -160,46 +163,80 @@ class StickItem {
         ctx.save();
         ctx.translate(ox, oy);
         ctx.rotate(rot);
-        ctx.fillStyle = "#ffeb3b";
-        ctx.strokeStyle = "#fbc02d";
-        ctx.lineWidth = 2; // DIPERBESAR: garis tepi lebih tebal
+        
+        // Gradien kayu
+        const gradient = ctx.createLinearGradient(-20, -120, 20, 120);
+        gradient.addColorStop(0, '#ffe082');
+        gradient.addColorStop(0.5, '#ffeb3b');
+        gradient.addColorStop(1, '#f9a825');
+        ctx.fillStyle = gradient;
+        ctx.strokeStyle = "#e65100";
+        ctx.lineWidth = 3;
+        
         ctx.beginPath();
-        // DIPERBESAR: stik dari (-7,-45,14,90) menjadi (-10,-60,20,120)
-        ctx.roundRect(-10, -60, 20, 120, 7);
+        // Stik ukuran 40px lebar, 240px tinggi dengan ujung membulat
+        ctx.roundRect(-20, -120, 40, 240, 12);
         ctx.fill();
         ctx.stroke();
+        
+        // Tambahan detail serat kayu
+        ctx.beginPath();
+        ctx.moveTo(-8, -110);
+        ctx.lineTo(-8, 110);
+        ctx.strokeStyle = "#e65100";
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(8, -110);
+        ctx.lineTo(8, 110);
+        ctx.stroke();
+        
         ctx.restore();
     }
 
     contains(mx, my) {
-        return mx > this.x - this.w/2 - 6 && mx < this.x + this.w/2 + 6 &&
-               my > this.y - this.h/2 - 6 && my < this.y + this.h/2 + 6;
+        return mx > this.x - this.w/2 - 10 && mx < this.x + this.w/2 + 10 &&
+               my > this.y - this.h/2 - 10 && my < this.y + this.h/2 + 10;
     }
 }
 
-// Helper to get coordinates from both mouse and touch events
+// Helper untuk roundRect
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+        if (w < 2 * r) r = w / 2;
+        if (h < 2 * r) r = h / 2;
+        this.moveTo(x+r, y);
+        this.lineTo(x+w-r, y);
+        this.quadraticCurveTo(x+w, y, x+w, y+r);
+        this.lineTo(x+w, y+h-r);
+        this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+        this.lineTo(x+r, y+h);
+        this.quadraticCurveTo(x, y+h, x, y+h-r);
+        this.lineTo(x, y+r);
+        this.quadraticCurveTo(x, y, x+r, y);
+        return this;
+    };
+}
+
 function getCanvasCoords(e) {
     const rect = canvas.getBoundingClientRect();
     let clientX, clientY;
     
     if (e.touches) {
-        // Touch event
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
     } else {
-        // Mouse event
         clientX = e.clientX;
         clientY = e.clientY;
     }
     
-    // Scale coordinates if canvas is visually scaled (due to CSS max-width)
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     
     let canvasX = (clientX - rect.left) * scaleX;
     let canvasY = (clientY - rect.top) * scaleY;
     
-    // Clamp to canvas boundaries
     canvasX = Math.min(Math.max(0, canvasX), canvas.width);
     canvasY = Math.min(Math.max(0, canvasY), canvas.height);
     
@@ -207,14 +244,14 @@ function getCanvasCoords(e) {
 }
 
 function addStick() {
-    items.push(new StickItem('stick', 150 + Math.random()*100, 150 + Math.random()*100));
+    items.push(new StickItem('stick', 200 + Math.random()*150, 200 + Math.random()*150));
     render();
 }
 
 function bundleSelected() {
     const selected = items.filter(i => i.selected);
     if (selected.length < 2) {
-        alert("Select at least two items (sticks or bundles) to bundle them!");
+        alert("Pilih minimal 2 stik atau bundle untuk digabung!");
         return;
     }
 
@@ -230,10 +267,8 @@ function bundleSelected() {
     avgX /= selected.length;
     avgY /= selected.length;
 
-    // Filter out the items being bundled
     items = items.filter(i => !i.selected);
     
-    // Create the new combined bundle
     const newBundle = new StickItem('bundle', avgX, avgY, totalCount);
     newBundle.selected = true;
     items.push(newBundle);
@@ -244,14 +279,14 @@ function unbundleSelected() {
     const selectedBundles = items.filter(i => i.selected && i.type === 'bundle');
     
     if (selectedBundles.length === 0) {
-        alert("Select a bundle first to unbundle it.");
+        alert("Pilih bundle terlebih dahulu untuk dipisahkan!");
         return;
     }
 
     selectedBundles.forEach(bundle => {
         items = items.filter(i => i !== bundle);
         for(let i=0; i < bundle.count; i++) {
-            const s = new StickItem('stick', bundle.x + (Math.random()-0.5)*100, bundle.y + (Math.random()-0.5)*50);
+            const s = new StickItem('stick', bundle.x + (Math.random()-0.5)*120, bundle.y + (Math.random()-0.5)*80);
             s.selected = true;
             items.push(s);
         }
@@ -274,9 +309,8 @@ function render() {
     items.forEach(item => item.draw());
 }
 
-// Unified start handler (mouse + touch)
 function onDragStart(e) {
-    e.preventDefault(); // Prevent default touch behavior (like scrolling)
+    e.preventDefault();
     
     const { x: mx, y: my } = getCanvasCoords(e);
     
@@ -284,14 +318,12 @@ function onDragStart(e) {
     dragTarget = null;
     dragStartPos = { x: mx, y: my };
 
-    // Find item from top (reverse order)
     for (let i = items.length - 1; i >= 0; i--) {
         if (items[i].contains(mx, my)) {
             dragTarget = items[i];
             offset.x = mx - dragTarget.x;
             offset.y = my - dragTarget.y;
             isDragging = true;
-            // Move to front visually
             items.splice(i, 1);
             items.push(dragTarget);
             break;
@@ -300,15 +332,13 @@ function onDragStart(e) {
     render();
 }
 
-// Unified move handler
 function onDragMove(e) {
     if (!isDragging || !dragTarget) return;
     
-    e.preventDefault(); // Prevent scrolling while dragging
+    e.preventDefault();
     
     const { x: mx, y: my } = getCanvasCoords(e);
     
-    // Check if we've moved enough to consider it a drag (avoid accidental taps)
     const dx = Math.abs(mx - dragStartPos.x);
     const dy = Math.abs(my - dragStartPos.y);
     if (dx > 5 || dy > 5) {
@@ -322,10 +352,8 @@ function onDragMove(e) {
     }
 }
 
-// Unified end handler
 function onDragEnd(e) {
     if (!hasMoved && dragTarget) {
-        // Tap / click: toggle selection
         dragTarget.selected = !dragTarget.selected;
     }
     isDragging = false;
@@ -333,17 +361,15 @@ function onDragEnd(e) {
     render();
 }
 
-// === MOUSE EVENTS ===
 canvas.addEventListener('mousedown', onDragStart);
 window.addEventListener('mousemove', onDragMove);
 window.addEventListener('mouseup', onDragEnd);
 
-// === TOUCH EVENTS ===
 canvas.addEventListener('touchstart', onDragStart, { passive: false });
 window.addEventListener('touchmove', onDragMove, { passive: false });
 window.addEventListener('touchend', onDragEnd);
 
-// Start with a small default set
+// Tambahkan 3 stik awal
 for(let i=0; i<3; i++) addStick();
 </script>
 </body>

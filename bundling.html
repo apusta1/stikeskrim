@@ -108,7 +108,7 @@ class StickItem {
         this.count = count; 
         this.selected = false;
         
-        // DIPERBESAR 2x LIPAT: lebar stik 40, tinggi 240
+        // Ukuran besar: lebar 40, tinggi 240
         this.w = type === 'stick' ? 40 : 40 + (count * 16);
         this.h = 240;
     }
@@ -139,20 +139,14 @@ class StickItem {
                 this.drawStick(ox, Math.abs(ox) * 0.12, rot);
             }
 
-            // KARET PENGIKAT yang lebih besar
+            // KARET PENGIKAT SATU SAJA (di bagian atas)
             const bandWidth = this.w + 12;
             ctx.fillStyle = "#4caf50";
             ctx.strokeStyle = "#2e7d32";
             ctx.lineWidth = 4;
 
             ctx.beginPath();
-            ctx.roundRect(-bandWidth / 2, -14, bandWidth, 28, 8);
-            ctx.fill();
-            ctx.stroke();
-            
-            // Karet bagian bawah (opsional, lebih realistis)
-            ctx.beginPath();
-            ctx.roundRect(-bandWidth / 2, this.h/2 - 20, bandWidth, 28, 8);
+            ctx.roundRect(-bandWidth / 2, -this.h/2 + 15, bandWidth, 28, 8);
             ctx.fill();
             ctx.stroke();
         }
@@ -174,12 +168,11 @@ class StickItem {
         ctx.lineWidth = 3;
         
         ctx.beginPath();
-        // Stik ukuran 40px lebar, 240px tinggi dengan ujung membulat
         ctx.roundRect(-20, -120, 40, 240, 12);
         ctx.fill();
         ctx.stroke();
         
-        // Tambahan detail serat kayu
+        // Detail serat kayu
         ctx.beginPath();
         ctx.moveTo(-8, -110);
         ctx.lineTo(-8, 110);

@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Simulasi Geometri Kertas HVS</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: sans-serif;
+            background-color: #f0f2f5;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #ffffff;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        p {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        #workspace {
+            flex: 1;
+            position: relative;
+            background-color: #e5e9f0;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow: hidden;
+        }
+
+        #hvs-guide {
+            position: absolute;
+            left: 50%;
+            top: 45%;
+            transform: translate(-50%, -50%);
+            width: 240px;
+            height: 340px;
+            border: 2px dashed #94a3b8;
+            pointer-events: none;
+            border-radius: 4px;
+        }
+
+        .triangle {
+            position: absolute;
+            touch-action: none;
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: 0 0;
+            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.1));
+            transition: filter 0.2s;
+        }
+
+        .triangle:active {
+            filter: drop-shadow(4px 8px 12px rgba(0,0,0,0.25));
+            z-index: 20 !important;
+        }
+
+        .rotate-handle {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #3b82f6;
+            z-index: 5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            cursor: pointer;
+        }
+
+        #controls {
+            padding: 12px;
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: white;
+        }
+
+        .btn-reset {
+            background-color: #3b82f6;
+        }
+
+        .btn-reset:active {
+            background-color: #2563eb;
+        }
+
+        .btn-scramble {
+            background-color: #10b981;
+        }
+
+        .btn-scramble:active {
+            background-color: #059669;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Simulasi Geometri Kertas HVS</h1>
+    <p>Geser untuk membongkar, ketuk ↻ untuk memutar.</p>
+</header>
+
+<div id="workspace">
+    <div id="hvs-guide"></div>
+</div>
+
+<div id="controls">
+    <button class="btn-reset" onclick="assembleHVS()">Susun Utuh</button>
+    <button class="btn-scramble" onclick="scrambleTriangles()">Acak Potongan</button>
+</div>
+
+<script>
+const workspace = document.getElementById('workspace');
+
+const W = 120;
+const H1 = 100;
+const H2 = 240;
+
+/*
+    SUSUNAN DIPERBAIKI
+
+    ATAS:
+    k2 - k3
+    k1 - k4
+
+    BAWAH:
+    b1 - b4
+    b2 - b3
+*/
+
+const triangleData = [
+
+    // ===== ATAS =====
+
+    {
+        id: 'k2',
+        w: W,
+        h: H1,
+        path: `M 0 0 L ${W} 0 L ${W} ${H1} Z`,
+        color: '#c9f9e1',
+        rx: W,
+        ry: 0,
+        initRot: 0,
+        hx: (W * 2) / 3,
+        hy: H1 / 3
+    },
+
+    {
+        id: 'k3',
+        w: W,
+        h: H1,
+        path: `M 0 0 L ${W} 0 L 0 ${H1} Z`,
+        color: '#a7f3d0',
+        rx: 0,
+        ry: 0,
+        initRot: 0,
+        hx: W / 3,
+        hy: H1 / 3
+    },
+
+    {
+        id: 'k1',
+        w: W,
+        h: H1,
+        path: `M 0 0 L ${W} 0 L 0 ${H1} Z`,
+        color: '#a7f3d0',
+        rx: W,
+        ry: H1,
+        initRot: 180,
+        hx: W / 3,
+        hy: H1 / 3
+    },
+
+    {
+        id: 'k4',
+        w: W,
+        h: H1,
+        path: `M 0 0 L ${W} 0 L ${W} ${H1} Z`,
+        color: '#c9f9e1',
+        rx: 2*W,
+        ry: H1,
+        initRot: 180,
+        hx: (W * 2) / 3,
+        hy: H1 / 3
+    },
+
+    // ===== BAWAH =====
+
+    {
+        id: 'b4',
+        w: W,
+        h: H2,
+        path: `M 0 0 L ${W} 0 L 0 ${H2} Z`,
+        color: '#34d399',
+        rx: W,
+        ry: H1,
+        initRot: 0,
+        hx: W / 3,
+        hy: H2 / 3
+    },
+
+    {
+        id: 'b1',
+        w: W,
+        h: H2,
+        path: `M 0 0 L ${W} 0 L ${W} ${H2} Z`,
+        color: '#54e1ae',
+        rx: 0,
+        ry: H1,
+        initRot: 0,
+        hx: (W * 2) / 3,
+        hy: H2 / 3
+    },
+
+    {
+        id: 'b2',
+        w: W,
+        h: H2,
+        path: `M 0 0 L ${W} 0 L ${W} ${H2} Z`,
+        color: '#54e1ae',
+        rx: W,
+        ry: H1 + H2,
+        initRot: 180,
+        hx: (W * 2) / 3,
+        hy: H2 / 3
+    },
+
+    {
+        id: 'b3',
+        w: W,
+        h: H2,
+        path: `M 0 0 L ${W} 0 L 0 ${H2} Z`,
+        color: '#34d399',
+        rx: 2*W,
+        ry: H1 + H2,
+        initRot: 180,
+        hx: W / 3,
+        hy: H2 / 3
+    }
+];
+
+let activeElement = null;
+let currentX, currentY, initialX, initialY;
+let xOffset = {}, yOffset = {}, rotation = {};
+
+function initSimulation() {
+
+    triangleData.forEach((data) => {
+
+        const el = document.createElement('div');
+
+        el.className = 'triangle';
+        el.id = data.id;
+        el.style.width = data.w + 'px';
+        el.style.height = data.h + 'px';
+
+        el.innerHTML = `
+            <svg width="${data.w}" height="${data.h}" viewBox="0 0 ${data.w} ${data.h}">
+                <path d="${data.path}"
+                      fill="${data.color}"
+                      stroke="#065f46"
+                      stroke-width="1.5"/>
+            </svg>
+
+            <div class="rotate-handle"
+                 style="left:${data.hx - 16}px; top:${data.hy - 16}px;">
+                 ↻
+            </div>
+        `;
+
+        workspace.appendChild(el);
+
+        initEvents(el);
+    });
+
+    assembleHVS();
+}
+
+function updateTransform(el) {
+
+    el.style.transform =
+        `translate3d(${xOffset[el.id]}px,
+                     ${yOffset[el.id]}px,
+                     0)
+         rotate(${rotation[el.id]}deg)`;
+}
+
+function initEvents(el) {
+
+    const handle = el.querySelector('.rotate-handle');
+
+    const rotateAction = (e) => {
+
+        e.stopPropagation();
+        e.preventDefault();
+
+        rotation[el.id] =
+            (rotation[el.id] + 45) % 360;
+
+        updateTransform(el);
+    };
+
+    handle.addEventListener('click', rotateAction);
+
+    handle.addEventListener(
+        'touchstart',
+        rotateAction,
+        { passive: false }
+    );
+
+    el.addEventListener('mousedown', dragStart);
+
+    el.addEventListener(
+        'touchstart',
+        dragStart,
+        { passive: false }
+    );
+}
+
+function dragStart(e) {
+
+    if (e.target.classList.contains('rotate-handle')) return;
+
+    document
+        .querySelectorAll('.triangle')
+        .forEach(t => t.style.zIndex = 1);
+
+    this.style.zIndex = 10;
+
+    activeElement = this;
+
+    if (e.type === "touchstart") {
+
+        initialX =
+            e.touches[0].clientX -
+            xOffset[activeElement.id];
+
+        initialY =
+            e.touches[0].clientY -
+            yOffset[activeElement.id];
+
+    } else {
+
+        initialX =
+            e.clientX -
+            xOffset[activeElement.id];
+
+        initialY =
+            e.clientY -
+            yOffset[activeElement.id];
+    }
+
+    window.addEventListener('mousemove', drag);
+    window.addEventListener('mouseup', dragEnd);
+
+    window.addEventListener(
+        'touchmove',
+        drag,
+        { passive: false }
+    );
+
+    window.addEventListener('touchend', dragEnd);
+}
+
+function drag(e) {
+
+    if (!activeElement) return;
+
+    e.preventDefault();
+
+    if (e.type === "touchmove") {
+
+        currentX =
+            e.touches[0].clientX - initialX;
+
+        currentY =
+            e.touches[0].clientY - initialY;
+
+    } else {
+
+        currentX =
+            e.clientX - initialX;
+
+        currentY =
+            e.clientY - initialY;
+    }
+
+    xOffset[activeElement.id] = currentX;
+    yOffset[activeElement.id] = currentY;
+
+    updateTransform(activeElement);
+}
+
+function dragEnd() {
+
+    activeElement = null;
+
+    window.removeEventListener('mousemove', drag);
+    window.removeEventListener('mouseup', dragEnd);
+
+    window.removeEventListener('touchmove', drag);
+    window.removeEventListener('touchend', dragEnd);
+}
+
+function assembleHVS() {
+
+    const rect = workspace.getBoundingClientRect();
+
+    const guideLeft =
+        (rect.width / 2) - 120;
+
+    const guideTop =
+        (rect.height * 0.45) - 170;
+
+    triangleData.forEach((data) => {
+
+        const el =
+            document.getElementById(data.id);
+
+        xOffset[data.id] =
+            guideLeft + data.rx;
+
+        yOffset[data.id] =
+            guideTop + data.ry;
+
+        rotation[data.id] =
+            data.initRot;
+
+        updateTransform(el);
+    });
+}
+
+function scrambleTriangles() {
+
+    const rect = workspace.getBoundingClientRect();
+
+    triangleData.forEach((data) => {
+
+        const el =
+            document.getElementById(data.id);
+
+        xOffset[data.id] =
+            Math.random() *
+            (rect.width - data.w);
+
+        yOffset[data.id] =
+            (rect.height * 0.6) +
+            (Math.random() *
+            (rect.height * 0.3 - data.h));
+
+        rotation[data.id] =
+            Math.floor(Math.random() * 8) * 45;
+
+        updateTransform(el);
+    });
+}
+
+window.addEventListener('resize', assembleHVS);
+
+window.onload = initSimulation;
+</script>
+
+</body>
+</html>

@@ -194,7 +194,7 @@
             toggleInstructionMode();
         });
 
-        // --- 2. LOGIKA DRAG INTERAKTIF & TAP (MOBILE OPTIMIZED) ---
+        // --- 2. LOGIKA DRAG INTERAKTIF & TAP (MOBILE OPTIMIZED) - DENGAN BOUNDARY YANG TIDAK MENJADI MASALAH---
         function inisialisasiInteraksi(element, isBalok = false) {
             let isDragging = false;
             let startX, startY;
@@ -203,16 +203,68 @@
             let startTouchX, startTouchY;
             const threshold = 6; 
 
-            function updatePosisiAktual() {
-                currentX = element.offsetLeft;
-                currentY = element.offsetTop;
+            // Fungsi untuk mendapatkan batas workspace yang sebenarnya
+            function getBoundaries() {
+                const workspace = document.getElementById('workspace');
+                const maxW = Math.max(0, workspace.clientWidth - element.clientWidth);
+                const maxH = Math.max(0, workspace.clientHeight - element.clientHeight);
+                return { maxW, maxH };
             }
 
-            setTimeout(updatePosisiAktual, 100);
+            // Fungsi untuk menyesuaikan posisi elemen agar tetap dalam batas
+            function applyBoundaries(x, y) {
+                const { maxW, maxH } = getBoundaries();
+                let newX = x;
+                let newY = y;
+                
+                if (newX < 0) newX = 0;
+                if (newY < 0) newY = 0;
+                if (newX > maxW) newX = maxW;
+                if (newY > maxH) newY = maxH;
+                
+                return { x: newX, y: newY };
+            }
+
+            // Memastikan posisi awal elemen sudah sesuai batas (mencegah posisi awal di luar)
+            function normalizeInitialPosition() {
+                const currentLeft = parseFloat(element.style.left);
+                const currentTop = parseFloat(element.style.top);
+                if (!isNaN(currentLeft) && !isNaN(currentTop)) {
+                    const { x, y } = applyBoundaries(currentLeft, currentTop);
+                    element.style.left = x + 'px';
+                    element.style.top = y + 'px';
+                    currentX = x;
+                    currentY = y;
+                } else {
+                    // Jika belum ada style left/top, ambil dari offset (posisi CSS default)
+                    const rect = element.getBoundingClientRect();
+                    const workspaceRect = document.getElementById('workspace').getBoundingClientRect();
+                    let leftOffset = rect.left - workspaceRect.left;
+                    let topOffset = rect.top - workspaceRect.top;
+                    const { x, y } = applyBoundaries(leftOffset, topOffset);
+                    element.style.left = x + 'px';
+                    element.style.top = y + 'px';
+                    currentX = x;
+                    currentY = y;
+                }
+            }
+
+            // Inisialisasi posisi
+            normalizeInitialPosition();
+            
+            // Event resize: pastikan posisi tetap aman saat ukuran workspace berubah
+            window.addEventListener('resize', () => {
+                normalizeInitialPosition();
+            });
 
             function dragStart(e) {
                 isDragging = true;
-                updatePosisiAktual();
+                
+                // Update posisi terkini
+                currentX = parseFloat(element.style.left);
+                currentY = parseFloat(element.style.top);
+                if (isNaN(currentX)) currentX = 0;
+                if (isNaN(currentY)) currentY = 0;
 
                 let clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
                 let clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
@@ -234,17 +286,13 @@
                 let clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
                 let clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
 
-                currentX = clientX - startX;
-                currentY = clientY - startY;
-
-                const workspace = document.getElementById('workspace');
-                const maxW = workspace.clientWidth - element.clientWidth;
-                const maxH = workspace.clientHeight - element.clientHeight;
-
-                if (currentX < 0) currentX = 0;
-                if (currentY < 0) currentY = 0;
-                if (currentX > maxW) currentX = maxW;
-                if (currentY > maxH) currentY = maxH;
+                let rawX = clientX - startX;
+                let rawY = clientY - startY;
+                
+                // Terapkan batasan dengan lembut
+                const { x, y } = applyBoundaries(rawX, rawY);
+                currentX = x;
+                currentY = y;
 
                 element.style.left = currentX + 'px';
                 element.style.top = currentY + 'px';

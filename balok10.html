@@ -36,6 +36,7 @@
             background-repeat: no-repeat;
             background-position: center center;
             background-size: contain;
+            overflow: visible; /* Memungkinkan konten keluar dari batas */
         }
 
         /* --- ELEMEN INSTRUKSI (HOVER DI TENGAH ATAS) --- */
@@ -194,7 +195,7 @@
             toggleInstructionMode();
         });
 
-        // --- 2. LOGIKA DRAG INTERAKTIF & TAP (MOBILE OPTIMIZED) - DENGAN BOUNDARY YANG TIDAK MENJADI MASALAH---
+        // --- 2. LOGIKA DRAG INTERAKTIF & TAP (MOBILE OPTIMIZED) - TANPA BATASAN PERGERAKAN ---
         function inisialisasiInteraksi(element, isBalok = false) {
             let isDragging = false;
             let startX, startY;
@@ -203,68 +204,46 @@
             let startTouchX, startTouchY;
             const threshold = 6; 
 
-            // Fungsi untuk mendapatkan batas workspace yang sebenarnya
-            function getBoundaries() {
-                const workspace = document.getElementById('workspace');
-                const maxW = Math.max(0, workspace.clientWidth - element.clientWidth);
-                const maxH = Math.max(0, workspace.clientHeight - element.clientHeight);
-                return { maxW, maxH };
+            // Memastikan posisi awal elemen terekam dengan benar
+            function getCurrentPosition() {
+                let left = parseFloat(element.style.left);
+                let top = parseFloat(element.style.top);
+                if (isNaN(left)) left = 0;
+                if (isNaN(top)) top = 0;
+                return { x: left, y: top };
             }
 
-            // Fungsi untuk menyesuaikan posisi elemen agar tetap dalam batas
-            function applyBoundaries(x, y) {
-                const { maxW, maxH } = getBoundaries();
-                let newX = x;
-                let newY = y;
+            // Inisialisasi posisi awal dari style yang sudah ada
+            function initializePosition() {
+                const rect = element.getBoundingClientRect();
+                const workspaceRect = document.getElementById('workspace').getBoundingClientRect();
+                let leftOffset = rect.left - workspaceRect.left;
+                let topOffset = rect.top - workspaceRect.top;
                 
-                if (newX < 0) newX = 0;
-                if (newY < 0) newY = 0;
-                if (newX > maxW) newX = maxW;
-                if (newY > maxH) newY = maxH;
-                
-                return { x: newX, y: newY };
-            }
-
-            // Memastikan posisi awal elemen sudah sesuai batas (mencegah posisi awal di luar)
-            function normalizeInitialPosition() {
-                const currentLeft = parseFloat(element.style.left);
-                const currentTop = parseFloat(element.style.top);
-                if (!isNaN(currentLeft) && !isNaN(currentTop)) {
-                    const { x, y } = applyBoundaries(currentLeft, currentTop);
-                    element.style.left = x + 'px';
-                    element.style.top = y + 'px';
-                    currentX = x;
-                    currentY = y;
-                } else {
-                    // Jika belum ada style left/top, ambil dari offset (posisi CSS default)
-                    const rect = element.getBoundingClientRect();
-                    const workspaceRect = document.getElementById('workspace').getBoundingClientRect();
-                    let leftOffset = rect.left - workspaceRect.left;
-                    let topOffset = rect.top - workspaceRect.top;
-                    const { x, y } = applyBoundaries(leftOffset, topOffset);
-                    element.style.left = x + 'px';
-                    element.style.top = y + 'px';
-                    currentX = x;
-                    currentY = y;
+                // Jika belum ada style left/top, set dari posisi saat ini
+                if (element.style.left === '' || element.style.left === 'auto') {
+                    element.style.left = leftOffset + 'px';
                 }
+                if (element.style.top === '' || element.style.top === 'auto') {
+                    element.style.top = topOffset + 'px';
+                }
+                
+                currentX = parseFloat(element.style.left);
+                currentY = parseFloat(element.style.top);
+                if (isNaN(currentX)) currentX = leftOffset;
+                if (isNaN(currentY)) currentY = topOffset;
             }
 
-            // Inisialisasi posisi
-            normalizeInitialPosition();
+            // Panggil inisialisasi
+            initializePosition();
             
-            // Event resize: pastikan posisi tetap aman saat ukuran workspace berubah
-            window.addEventListener('resize', () => {
-                normalizeInitialPosition();
-            });
-
             function dragStart(e) {
                 isDragging = true;
                 
                 // Update posisi terkini
-                currentX = parseFloat(element.style.left);
-                currentY = parseFloat(element.style.top);
-                if (isNaN(currentX)) currentX = 0;
-                if (isNaN(currentY)) currentY = 0;
+                const pos = getCurrentPosition();
+                currentX = pos.x;
+                currentY = pos.y;
 
                 let clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
                 let clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
@@ -286,13 +265,13 @@
                 let clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
                 let clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
 
-                let rawX = clientX - startX;
-                let rawY = clientY - startY;
+                // Hitung posisi baru tanpa batasan apapun
+                let newX = clientX - startX;
+                let newY = clientY - startY;
                 
-                // Terapkan batasan dengan lembut
-                const { x, y } = applyBoundaries(rawX, rawY);
-                currentX = x;
-                currentY = y;
+                // Update posisi (tanpa batasan, bisa kemana saja)
+                currentX = newX;
+                currentY = newY;
 
                 element.style.left = currentX + 'px';
                 element.style.top = currentY + 'px';
@@ -330,12 +309,16 @@
                 }
             }
 
+            // Event listeners untuk drag (touch dan mouse)
             element.addEventListener('touchstart', dragStart, { passive: false });
             element.addEventListener('touchmove', dragActive, { passive: false });
             element.addEventListener('touchend', dragEnd);
 
             element.addEventListener('mousedown', dragStart);
             window.addEventListener('mousemove', dragActive);
+            window.addEventListener('mouseup', dragEnd);
+            
+            // Mencegah agar event mouseup tidak hilang jika mouse keluar dari element
             element.addEventListener('mouseup', dragEnd);
         }
 

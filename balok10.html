@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Aktivitas Pengukuran Interaktif</title>
+    <style>
+        /* --- VARIABEL UKURAN (Ubah di sini untuk menyesuaikan ukuran) --- */
+        :root {
+            --balok-width: 90px;  /* Ukuran lebar balok10 */
+            --benda-width: 400px; /* Ukuran lebar objek pembanding */
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #f5f7fa;
+            font-family: sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Area Bermain dengan Background Penggaris */
+        #workspace {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            background-image: url('balok10.png'); 
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: contain;
+        }
+
+        /* --- ELEMEN INSTRUKSI (HOVER DI TENGAH ATAS) --- */
+        #instruction-box {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100; /* Memastikan berada di paling depan */
+            width: 90%;
+            max-width: 500px; /* Batas lebar di layar besar */
+            background-color: rgba(255, 255, 255, 0.92); /* Putih semi-transparan */
+            backdrop-filter: blur(4px); /* Efek blur blur kekinian di iOS/Android */
+            color: #333333;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            cursor: pointer;          /* Menambah pointer agar terlihat bisa diklik */
+            transition: all 0.25s ease;
+            pointer-events: auto;     /* Aktifkan klik, tidak mengganggu drag di area lain */
+        }
+
+        /* Sembunyikan instruksi secara halus saat diubah menjadi ikon */
+        #instruction-box.collapsed {
+            width: 48px;
+            height: 48px;
+            padding: 0;
+            background-color: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(4px);
+            border-radius: 50%;
+            left: 20px;               /* pindah ke pojok kiri atas */
+            top: 20px;
+            transform: translateX(0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            line-height: 1;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            color: #2c3e66;
+        }
+
+        /* Saat collapsed, teks disembunyikan */
+        #instruction-box.collapsed .instruction-text {
+            display: none;
+        }
+
+        /* Teks instruksi biasa */
+        .instruction-text {
+            display: inline;
+        }
+
+        /* Ikon clipboard jika dalam mode collapsed (tampil sebagai isi) */
+        #instruction-box .clipboard-icon {
+            display: none;
+        }
+
+        #instruction-box.collapsed .clipboard-icon {
+            display: inline-block;
+            font-size: 28px;
+            line-height: 1;
+        }
+
+        /* Objek Utama */
+        .interactive-object {
+            position: absolute;
+            touch-action: none;
+            transition: transform 0.2s ease; 
+        }
+
+        /* Spesifik Balok 10 */
+        #balok-10 {
+            width: var(--balok-width); 
+            height: auto;
+            z-index: 10;
+            cursor: pointer;
+            transform-origin: center center;
+            left: 65%;
+            top: 5%;
+        }
+
+        /* Spesifik Objek Pembanding */
+        #target-object {
+            width: var(--benda-width); 
+            height: auto;
+            z-index: 5;
+            cursor: pointer;
+            left: 25%;
+            top: 45%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="instruction-box">
+        <span class="instruction-text">
+            Geser balok10 untuk mengukur. <br>Klik balok10 untuk memutarnya. <br>Klik benda untuk mengganti jenis bendanya. <br>Klik petunjuk ini agar tidak mengganggu.
+        </span>
+        <span class="clipboard-icon">📋</span>
+    </div>
+
+    <div id="workspace">
+        <img id="balok-10" class="interactive-object" src="balok10-ruler.png" alt="Balok 10" draggable="false">
+        <img id="target-object" class="interactive-object" src="tape.png" alt="Benda" draggable="false">
+    </div>
+
+    <script>
+        // --- 1. DAFTAR GAMBAR BENDA ACAK ---
+        const daftarBenda = [
+            "tape.png",
+            "penghapus.png",
+            "pensil.png",
+        ];
+
+        let currentRotation = 0;
+        const balok = document.getElementById('balok-10');
+        const targetObj = document.getElementById('target-object');
+        const instructionBox = document.getElementById('instruction-box');
+
+        // Fungsi Putar Balok
+        function rotateBalok() {
+            currentRotation = (currentRotation + 90) % 360;
+            balok.style.transform = `rotate(${currentRotation}deg)`;
+        }
+
+        // Fungsi Ganti Benda Acak
+        function gantiBenda() {
+            let indeksBaru;
+            do {
+                indeksBaru = Math.floor(Math.random() * daftarBenda.length);
+            } while (daftarBenda[indeksBaru] === targetObj.getAttribute('src'));
+
+            targetObj.src = daftarBenda[indeksBaru];
+        }
+
+        // Fungsi untuk mengubah instruksi menjadi ikon clipboard di kiri atas ketika diklik
+        function toggleInstructionMode() {
+            if (!instructionBox.classList.contains('collapsed')) {
+                // Mode aktif -> sembunyikan teks, ubah posisi & tampilan jadi ikon bulat di kiri atas
+                instructionBox.classList.add('collapsed');
+            } else {
+                // Kembali ke mode normal (kotak instruksi tengah atas dengan teks lengkap)
+                instructionBox.classList.remove('collapsed');
+            }
+        }
+
+        // Event listener untuk kotak instruksi (klik untuk mengubah mode)
+        instructionBox.addEventListener('click', function(e) {
+            // Hentikan propagasi agar tidak mengganggu event lain (tidak perlu mencegah drag)
+            e.stopPropagation();
+            toggleInstructionMode();
+        });
+
+        // --- 2. LOGIKA DRAG INTERAKTIF & TAP (MOBILE OPTIMIZED) ---
+        function inisialisasiInteraksi(element, isBalok = false) {
+            let isDragging = false;
+            let startX, startY;
+            let currentX = 0, currentY = 0;
+            
+            let startTouchX, startTouchY;
+            const threshold = 6; 
+
+            function updatePosisiAktual() {
+                currentX = element.offsetLeft;
+                currentY = element.offsetTop;
+            }
+
+            setTimeout(updatePosisiAktual, 100);
+
+            function dragStart(e) {
+                isDragging = true;
+                updatePosisiAktual();
+
+                let clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+                let clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+
+                startTouchX = clientX;
+                startTouchY = clientY;
+
+                startX = clientX - currentX;
+                startY = clientY - currentY;
+                
+                element.style.transition = 'none'; 
+                // Mencegah default agar tidak ada efek scroll saat drag pada mobile
+                if (e.cancelable) e.preventDefault();
+            }
+
+            function dragActive(e) {
+                if (!isDragging) return;
+                
+                let clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+                let clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+
+                currentX = clientX - startX;
+                currentY = clientY - startY;
+
+                const workspace = document.getElementById('workspace');
+                const maxW = workspace.clientWidth - element.clientWidth;
+                const maxH = workspace.clientHeight - element.clientHeight;
+
+                if (currentX < 0) currentX = 0;
+                if (currentY < 0) currentY = 0;
+                if (currentX > maxW) currentX = maxW;
+                if (currentY > maxH) currentY = maxH;
+
+                element.style.left = currentX + 'px';
+                element.style.top = currentY + 'px';
+                
+                if (e.cancelable) e.preventDefault();
+            }
+
+            function dragEnd(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                element.style.transition = 'transform 0.2s ease';
+
+                let endX = 0, endY = 0;
+                if (e.type === 'touchend') {
+                    if (e.changedTouches.length) {
+                        endX = e.changedTouches[0].clientX;
+                        endY = e.changedTouches[0].clientY;
+                    } else {
+                        endX = startTouchX;
+                        endY = startTouchY;
+                    }
+                } else {
+                    endX = e.clientX;
+                    endY = e.clientY;
+                }
+
+                // Deteksi jika perpindahan kurang dari threshold berarti "klik/tap", bukan drag
+                if (Math.abs(endX - startTouchX) < threshold && Math.abs(endY - startTouchY) < threshold) {
+                    if (isBalok) {
+                        rotateBalok();
+                    } else {
+                        gantiBenda();
+                    }
+                }
+            }
+
+            element.addEventListener('touchstart', dragStart, { passive: false });
+            element.addEventListener('touchmove', dragActive, { passive: false });
+            element.addEventListener('touchend', dragEnd);
+
+            element.addEventListener('mousedown', dragStart);
+            window.addEventListener('mousemove', dragActive);
+            element.addEventListener('mouseup', dragEnd);
+        }
+
+        inisialisasiInteraksi(balok, true);       
+        inisialisasiInteraksi(targetObj, false);
+
+    </script>
+</body>
+</html>

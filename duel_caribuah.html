@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Duel Monyet Cari Buah! | 2 Pemain</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #0a1f17;
+            overflow: hidden;
+            font-family: 'Quicksand', 'Segoe UI', system-ui, sans-serif;
+            touch-action: none;
+        }
+
+        /* Layout dua kolom untuk IFP (Interactive Flat Panel) */
+        .duel-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            flex-direction: row;
+        }
+
+        /* Panel kiri dan kanan masing-masing setengah layar */
+        .player-panel {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            border-right: 8px solid #ffcc33;
+            box-shadow: inset 0 0 0 2px rgba(0,0,0,0.1);
+        }
+
+        .player-panel:last-child {
+            border-right: none;
+            border-left: 4px solid #ffaa33;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #5a3b1f;
+        }
+
+        /* UI untuk PEMAIN KIRI - diletakkan di sisi KANAN panel kiri (agar tidak menutupi minimap kiri yang di kiri) */
+        .ui-left {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            border-radius: 40px;
+            padding: 10px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            z-index: 20;
+            border: 3px solid #ffaa33;
+            font-weight: bold;
+            min-width: 130px;
+            pointer-events: none;
+        }
+
+        /* UI untuk PEMAIN KANAN - diletakkan di sisi KIRI panel kanan (agar tidak menutupi minimap kanan yang di kanan) */
+        .ui-right {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            border-radius: 40px;
+            padding: 10px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            z-index: 20;
+            border: 3px solid #ffaa33;
+            font-weight: bold;
+            min-width: 130px;
+            pointer-events: none;
+        }
+
+        .fruit-counter {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: #2c4b32;
+            white-space: nowrap;
+        }
+
+        .timer-display {
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: #2c2e1e;
+            color: #ffefb9;
+            padding: 5px 12px;
+            border-radius: 40px;
+            font-family: monospace;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3), 0 1px 1px rgba(255,255,200,0.4);
+        }
+
+        .player-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: #ffcc33;
+            padding: 4px 16px;
+            border-radius: 50px;
+            color: #1f3b2c;
+            margin-bottom: 4px;
+        }
+
+        /* Overlay bersama untuk memulai game (dua pemain) */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 30, 20, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            text-align: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal {
+            background: #2d5a3f;
+            padding: 30px 50px;
+            border-radius: 50px;
+            border: 5px solid #ffcc33;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.5);
+            max-width: 90%;
+        }
+
+        .modal h1 { color: #ffcc33; margin-bottom: 15px; font-size: 2rem; }
+        .modal p { font-size: 1.2rem; margin-bottom: 25px; line-height: 1.5; }
+
+        .btn-start {
+            background: #ffcc33;
+            color: #1a3d2c;
+            border: none;
+            padding: 12px 35px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-start:hover { transform: scale(1.05); background: #ffdd55;}
+
+        .hidden { display: none !important; }
+
+        .winner-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffcc33dd;
+            color: #1f3b2c;
+            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 1.4rem;
+            backdrop-filter: blur(8px);
+            z-index: 200;
+            white-space: nowrap;
+            pointer-events: none;
+            font-family: monospace;
+            border: 2px solid gold;
+            box-shadow: 0 0 20px rgba(0,0,0,0.4);
+        }
+
+        @media (max-width: 800px) {
+            .player-name { font-size: 1rem; }
+            .fruit-counter { font-size: 1.2rem; }
+            .timer-display { font-size: 0.85rem; }
+            .ui-left, .ui-right { padding: 6px 12px; min-width: 110px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="globalStartOverlay" class="overlay">
+    <div class="modal">
+        <h1>🐒🐒 Duel Cari Buah!</h1>
+        <p>Dua pemain! Kumpulkan semua pisang secepat mungkin.<br>
+        <strong>Kiri vs Kanan</strong> — masing-masing punya peta sendiri & jumlah buah sama.<br>
+        Klik/tap di area masing-masing untuk gerakkan monyet. <br>
+        Siapa paling cepat kumpulkan semua buah? 🏆</p>
+        <button class="btn-start" onclick="startDuelGame()">Mulai Duel!</button>
+    </div>
+</div>
+
+<div id="winnerToast" class="winner-toast hidden"></div>
+
+<div class="duel-container">
+    <!-- PLAYER KIRI: UI pindah ke kanan (right) -->
+    <div class="player-panel" id="playerLeftPanel">
+        <canvas id="canvasLeft" class="game-canvas"></canvas>
+        <div class="ui-left">
+            <div class="player-name">🐒 Pemain Kiri</div>
+            <div class="fruit-counter">🍌 <span id="leftFruitCount">0</span> / <span id="leftTotalFruits">0</span></div>
+            <div class="timer-display" id="leftTimerDisplay">⏱️ 00:00</div>
+        </div>
+    </div>
+
+    <!-- PLAYER KANAN: UI pindah ke kiri (left) -->
+    <div class="player-panel" id="playerRightPanel">
+        <canvas id="canvasRight" class="game-canvas"></canvas>
+        <div class="ui-right">
+            <div class="player-name">🐵 Pemain Kanan</div>
+            <div class="fruit-counter">🍌 <span id="rightFruitCount">0</span> / <span id="rightTotalFruits">0</span></div>
+            <div class="timer-display" id="rightTimerDisplay">⏱️ 00:00</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ----------------------------- KONFIGURASI GLOBAL DUA PEMAIN -------------------------
+        const WORLD_SIZE = 2800;      // sedikit lebih kecil agar cocok di setengah layar
+        const MOVE_SPEED = 340;
+        
+        // Fungsi suara (opsional, masing-masing pemain bisa dengar)
+        let speechAllowedLeft = false;
+        let speechAllowedRight = false;
+        
+        function speakNumber(num, side) {
+            if (side === 'left' && !speechAllowedLeft) return;
+            if (side === 'right' && !speechAllowedRight) return;
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+            }
+            const utterance = new SpeechSynthesisUtterance(num.toString());
+            utterance.lang = 'id-ID';
+            utterance.rate = 1.1;
+            utterance.pitch = 1.1;
+            window.speechSynthesis.speak(utterance);
+        }
+        
+        // ---------- Kelas PlayerGame menangani satu instance lengkap (canvas, state, timer, buah) ----------
+        class PlayerGame {
+            constructor(canvasId, fruitCountSpanId, totalFruitsSpanId, timerDisplayId, sideName, startPosOverride = null) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.fruitCountSpan = document.getElementById(fruitCountSpanId);
+                this.totalFruitsSpan = document.getElementById(totalFruitsSpanId);
+                this.timerDisplayElem = document.getElementById(timerDisplayId);
+                this.side = sideName; // 'left' or 'right'
+                
+                // Dimensi dan skala
+                this.dpr = window.devicePixelRatio || 1;
+                this.width = 0;
+                this.height = 0;
+                
+                // World & karakter
+                this.worldSize = WORLD_SIZE;
+                this.character = { x: WORLD_SIZE/2, y: WORLD_SIZE/2 };
+                this.targetPos = { x: this.character.x, y: this.character.y };
+                this.camera = { x: 0, y: 0 };
+                this.fruits = [];
+                this.collected = 0;
+                this.isMoving = false;
+                this.facingRight = true;
+                
+                // Timer
+                this.timerSeconds = 0;
+                this.timerInterval = null;
+                this.isGameActive = false;   // timer running?
+                this.gameFinished = false;    // sudah menang?
+                
+                // callbacks menang
+                this.onWinCallback = null;
+                
+                this.initWorld();
+                this.setupEvents();
+            }
+            
+            // Inisialisasi buah dari template (sama untuk kedua pemain)
+            initFruitsFromTemplate(templateFruits) {
+                this.fruits = [];
+                for (let f of templateFruits) {
+                    this.fruits.push({
+                        x: f.x,
+                        y: f.y,
+                        icon: f.icon,
+                        collected: false
+                    });
+                }
+                this.collected = 0;
+                this.updateFruitUI();
+                this.totalFruitsSpan.innerText = this.fruits.length;
+                this.fruitCountSpan.innerText = "0";
+            }
+            
+            updateFruitUI() {
+                this.fruitCountSpan.innerText = this.collected;
+            }
+            
+            // Inisialisasi dunia (resize canvas)
+            initWorld() {
+                this.resizeCanvas();
+                // default tidak ada buah sampai di-set dari luar
+            }
+            
+            resizeCanvas() {
+                const container = this.canvas.parentElement;
+                this.width = container.clientWidth;
+                this.height = container.clientHeight;
+                this.canvas.width = this.width * this.dpr;
+                this.canvas.height = this.height * this.dpr;
+                this.ctx.scale(this.dpr, this.dpr);
+                this.canvas.style.width = this.width + 'px';
+                this.canvas.style.height = this.height + 'px';
+            }
+            
+            startTimer() {
+                if (this.timerInterval) clearInterval(this.timerInterval);
+                this.timerSeconds = 0;
+                this.updateTimerDisplay();
+                this.isGameActive = true;
+                this.timerInterval = setInterval(() => {
+                    if (this.isGameActive && !this.gameFinished) {
+                        this.timerSeconds++;
+                        this.updateTimerDisplay();
+                    }
+                }, 1000);
+            }
+            
+            stopTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+                this.isGameActive = false;
+                return this.timerSeconds;
+            }
+            
+            updateTimerDisplay() {
+                if (this.timerDisplayElem) {
+                    const mins = Math.floor(this.timerSeconds / 60);
+                    const secs = this.timerSeconds % 60;
+                    this.timerDisplayElem.textContent = `⏱️ ${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+                }
+            }
+            
+            resetGameState(resetFruitsTemplate = null, templateFruits = null) {
+                // reset posisi
+                this.character.x = WORLD_SIZE/2;
+                this.character.y = WORLD_SIZE/2;
+                this.targetPos.x = this.character.x;
+                this.targetPos.y = this.character.y;
+                this.isMoving = false;
+                this.facingRight = true;
+                this.collected = 0;
+                this.gameFinished = false;
+                if (resetFruitsTemplate && templateFruits) {
+                    this.initFruitsFromTemplate(templateFruits);
+                } else {
+                    // mark all fruits as not collected
+                    for(let f of this.fruits) f.collected = false;
+                    this.collected = 0;
+                    this.updateFruitUI();
+                }
+                this.updateFruitUI();
+                // reset timer visual
+                if(this.timerInterval) clearInterval(this.timerInterval);
+                this.timerSeconds = 0;
+                this.updateTimerDisplay();
+                this.isGameActive = false;
+                this.timerInterval = null;
+            }
+            
+            startGameAfterReset(templateFruits) {
+                this.resetGameState(true, templateFruits);
+                this.startTimer();
+                this.gameFinished = false;
+                this.isGameActive = true;
+            }
+            
+            checkWin() {
+                if (!this.gameFinished && this.collected === this.fruits.length) {
+                    this.gameFinished = true;
+                    const finalSec = this.stopTimer();
+                    if (this.onWinCallback) this.onWinCallback(this.side, finalSec);
+                    return true;
+                }
+                return false;
+            }
+            
+            setWinCallback(cb) {
+                this.onWinCallback = cb;
+            }
+            
+            update(dt) {
+                if (this.gameFinished) return;
+                if (this.isMoving) {
+                    const dx = this.targetPos.x - this.character.x;
+                    const dy = this.targetPos.y - this.character.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (Math.abs(dx) > 0.1) {
+                        this.facingRight = (dx < 0);
+                    }
+                    if (dist < 6) {
+                        this.isMoving = false;
+                    } else {
+                        const angle = Math.atan2(dy, dx);
+                        this.character.x += Math.cos(angle) * MOVE_SPEED * dt;
+                        this.character.y += Math.sin(angle) * MOVE_SPEED * dt;
+                    }
+                    
+                    // koleksi buah
+                    for (let f of this.fruits) {
+                        if (!f.collected && Math.hypot(this.character.x - f.x, this.character.y - f.y) < 38) {
+                            f.collected = true;
+                            this.collected++;
+                            this.updateFruitUI();
+                            // suara sesuai side
+                            speakNumber(this.collected, this.side);
+                            if (this.checkWin()) {
+                                // jika menang, hentikan gerakan
+                                this.isMoving = false;
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+                // kamera smoothing
+                const centerX = this.character.x - this.width/2;
+                const centerY = this.character.y - this.height/2;
+                this.camera.x += (centerX - this.camera.x) * 0.1;
+                this.camera.y += (centerY - this.camera.y) * 0.1;
+            }
+            
+            draw() {
+                if (!this.ctx) return;
+                // bersihkan
+                this.ctx.fillStyle = '#4a2f19';
+                this.ctx.fillRect(0, 0, this.width, this.height);
+                
+                // grid dekorasi
+                this.ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+                for(let x = -this.camera.x % 100; x < this.width; x += 100) {
+                    this.ctx.beginPath(); this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.height); this.ctx.stroke();
+                }
+                for(let y = -this.camera.y % 100; y < this.height; y += 100) {
+                    this.ctx.beginPath(); this.ctx.moveTo(0, y); this.ctx.lineTo(this.width, y); this.ctx.stroke();
+                }
+                
+                // gambar buah
+                this.ctx.font = '42px serif';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.shadowBlur = 6;
+                this.ctx.shadowColor = 'rgba(0,0,0,0.2)';
+                for (let f of this.fruits) {
+                    if (!f.collected) {
+                        this.ctx.fillText(f.icon, f.x - this.camera.x, f.y - this.camera.y);
+                    }
+                }
+                this.ctx.shadowBlur = 0;
+                
+                // gambar monyet
+                this.drawMonkey(this.character.x, this.character.y);
+                
+                // minimap (posisi: kiri untuk left player, kanan untuk right player)
+                this.drawMinimap();
+            }
+            
+            drawMonkey(x, y) {
+                const sx = x - this.camera.x;
+                const sy = y - this.camera.y;
+                this.ctx.save();
+                this.ctx.translate(sx, sy);
+                if (!this.facingRight) {
+                    this.ctx.scale(-1, 1);
+                }
+                this.ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                this.ctx.beginPath();
+                this.ctx.ellipse(0, 20, 16, 7, 0, 0, Math.PI*2);
+                this.ctx.fill();
+                this.ctx.font = '52px "Segoe UI Emoji"';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.shadowBlur = 2;
+                this.ctx.shadowColor = 'rgba(0,0,0,0.4)';
+                this.ctx.fillStyle = '#000000';
+                this.ctx.fillText('🐒', 0, 0);
+                this.ctx.restore();
+            }
+            
+            drawMinimap() {
+                const mapSize = 120;
+                const margin = 12;
+                this.ctx.save();
+                // Untuk player kiri, minimap di pojok kiri atas (tidak tertutup UI yang sekarang di kanan)
+                // Untuk player kanan, minimap di pojok kanan atas (tidak tertutup UI yang sekarang di kiri)
+                if (this.side === 'left') {
+                    this.ctx.translate(margin, margin);
+                } else {
+                    this.ctx.translate(this.width - mapSize - margin, margin);
+                }
+                this.ctx.fillStyle = 'rgba(0,0,0,0.55)';
+                this.ctx.strokeStyle = '#ffcc88';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.roundRect(0, 0, mapSize, mapSize, 8);
+                this.ctx.fill();
+                this.ctx.stroke();
+                
+                const worldToMap = (pos) => (pos / this.worldSize) * mapSize;
+                this.ctx.fillStyle = '#ffdd77';
+                for(let f of this.fruits) {
+                    if(!f.collected) {
+                        this.ctx.beginPath();
+                        this.ctx.arc(worldToMap(f.x), worldToMap(f.y), 2.8, 0, Math.PI*2);
+                        this.ctx.fill();
+                    }
+                }
+                this.ctx.fillStyle = '#6eff6e';
+                this.ctx.beginPath();
+                this.ctx.arc(worldToMap(this.character.x), worldToMap(this.character.y), 4.5, 0, Math.PI*2);
+                this.ctx.fill();
+                this.ctx.restore();
+            }
+            
+            handleClick(clientX, clientY) {
+                if (this.gameFinished) return;
+                // konversi layar ke world
+                const worldX = clientX + this.camera.x;
+                const worldY = clientY + this.camera.y;
+                this.targetPos.x = Math.min(Math.max(worldX, 40), this.worldSize - 40);
+                this.targetPos.y = Math.min(Math.max(worldY, 40), this.worldSize - 40);
+                this.isMoving = true;
+            }
+            
+            setupEvents() {
+                const eventHandler = (e) => {
+                    e.preventDefault();
+                    let clientX, clientY;
+                    if (e.touches) {
+                        clientX = e.touches[0].clientX;
+                        clientY = e.touches[0].clientY;
+                    } else {
+                        clientX = e.clientX;
+                        clientY = e.clientY;
+                    }
+                    // deteksi apakah klik berada di panel ini
+                    const rect = this.canvas.getBoundingClientRect();
+                    if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+                        this.handleClick(clientX - rect.left, clientY - rect.top);
+                    }
+                };
+                this.canvas.addEventListener('mousedown', eventHandler);
+                this.canvas.addEventListener('touchstart', eventHandler, { passive: false });
+                window.addEventListener('resize', () => this.resizeCanvas());
+            }
+        }
+        
+        // helper roundrect
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.moveTo(x+r, y);
+                this.lineTo(x+w-r, y);
+                this.quadraticCurveTo(x+w, y, x+w, y+r);
+                this.lineTo(x+w, y+h-r);
+                this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+                this.lineTo(x+r, y+h);
+                this.quadraticCurveTo(x, y+h, x, y+h-r);
+                this.lineTo(x, y+r);
+                this.quadraticCurveTo(x, y, x+r, y);
+                return this;
+            };
+        }
+        
+        // ------------------ GLOBAL DUEL MANAGER ------------------
+        let leftGame = null;
+        let rightGame = null;
+        let sharedFruitTemplate = [];   // posisi buah IDENTIK untuk kedua sisi
+        let winnerDeclared = false;
+        let winnerToastDiv = document.getElementById('winnerToast');
+        
+        function generateIdenticalFruits(totalCount) {
+            const fruitIcons = ['🍌', '🍌', '🍌', '🍌', '🍌'];
+            const startPos = { x: WORLD_SIZE/2, y: WORLD_SIZE/2 };
+            const minDistanceFruit = 70;
+            const template = [];
+            const maxAttempts = 4000;
+            for(let i=0; i<totalCount; i++) {
+                let placed = false;
+                let attempts = 0;
+                while(!placed && attempts < maxAttempts) {
+                    const newX = Math.random() * (WORLD_SIZE - 500) + 250;
+                    const newY = Math.random() * (WORLD_SIZE - 500) + 250;
+                    let tooClose = false;
+                    for(let existing of template) {
+                        if(Math.hypot(newX - existing.x, newY - existing.y) < minDistanceFruit) {
+                            tooClose = true; break;
+                        }
+                    }
+                    if(!tooClose && Math.hypot(newX - startPos.x, newY - startPos.y) > 100) {
+                        template.push({ x: newX, y: newY, icon: fruitIcons[Math.floor(Math.random()*fruitIcons.length)] });
+                        placed = true;
+                    }
+                    attempts++;
+                }
+                if(!placed) {
+                    let fallbackX, fallbackY;
+                    do {
+                        fallbackX = Math.random() * (WORLD_SIZE - 400) + 200;
+                        fallbackY = Math.random() * (WORLD_SIZE - 400) + 200;
+                    } while(Math.hypot(fallbackX - startPos.x, fallbackY - startPos.y) < 110);
+                    template.push({ x: fallbackX, y: fallbackY, icon: '🍌' });
+                }
+            }
+            return template;
+        }
+        
+        function initDuel() {
+            const jumlahBuah = Math.floor(Math.random() * (18 - 10 + 1)) + 10; // antara 10-18
+            sharedFruitTemplate = generateIdenticalFruits(jumlahBuah);
+            
+            leftGame = new PlayerGame('canvasLeft', 'leftFruitCount', 'leftTotalFruits', 'leftTimerDisplay', 'left');
+            rightGame = new PlayerGame('canvasRight', 'rightFruitCount', 'rightTotalFruits', 'rightTimerDisplay', 'right');
+            
+            // set buah sama persis
+            leftGame.initFruitsFromTemplate(sharedFruitTemplate);
+            rightGame.initFruitsFromTemplate(sharedFruitTemplate);
+            
+            // callback kemenangan
+            leftGame.setWinCallback((side, timeSec) => handleWin(side, timeSec));
+            rightGame.setWinCallback((side, timeSec) => handleWin(side, timeSec));
+            
+            // reset timer state
+            leftGame.resetGameState(true, sharedFruitTemplate);
+            rightGame.resetGameState(true, sharedFruitTemplate);
+            
+            winnerDeclared = false;
+            winnerToastDiv.classList.add('hidden');
+        }
+        
+        function handleWin(side, timeSec) {
+            if (winnerDeclared) return;
+            winnerDeclared = true;
+            // stop kedua timer dan nonaktifkan gerakan
+            if (leftGame && !leftGame.gameFinished) {
+                leftGame.stopTimer();
+                leftGame.gameFinished = true;
+                leftGame.isMoving = false;
+            }
+            if (rightGame && !rightGame.gameFinished) {
+                rightGame.stopTimer();
+                rightGame.gameFinished = true;
+                rightGame.isMoving = false;
+            }
+            const minutes = Math.floor(timeSec / 60);
+            const seconds = timeSec % 60;
+            const timeStr = minutes > 0 ? `${minutes} menit ${seconds} detik` : `${seconds} detik`;
+            const winnerName = side === 'left' ? 'Pemain Kiri 🐒' : 'Pemain Kanan 🐵';
+            winnerToastDiv.innerHTML = `🏆 ${winnerName} MENANG! 🏆 &nbsp;&nbsp; Waktu: ${timeStr}`;
+            winnerToastDiv.classList.remove('hidden');
+            setTimeout(() => {
+                if(winnerToastDiv && !winnerToastDiv.classList.contains('hidden'))
+                    winnerToastDiv.classList.add('hidden');
+            }, 8000);
+        }
+        
+        function startDuelGame() {
+            document.getElementById('globalStartOverlay').classList.add('hidden');
+            initDuel();
+            // mulai timer dan aktifkan game untuk kedua sisi
+            leftGame.startGameAfterReset(sharedFruitTemplate);
+            rightGame.startGameAfterReset(sharedFruitTemplate);
+            speechAllowedLeft = true;
+            speechAllowedRight = true;
+        }
+        
+        window.startDuelGame = startDuelGame;
+        
+        // animation loop menggambar dan update kedua game
+        let mainLoopActive = false;
+        function animate() {
+            const dt = 1/60;
+            if (leftGame) {
+                leftGame.update(dt);
+                leftGame.draw();
+            }
+            if (rightGame) {
+                rightGame.update(dt);
+                rightGame.draw();
+            }
+            requestAnimationFrame(animate);
+        }
+        
+        // inisialisasi awal tanpa game aktif, overlay tampil
+        // canvas dummy untuk tampilan awal
+        const dummyLeft = new PlayerGame('canvasLeft', 'leftFruitCount', 'leftTotalFruits', 'leftTimerDisplay', 'left');
+        const dummyRight = new PlayerGame('canvasRight', 'rightFruitCount', 'rightTotalFruits', 'rightTimerDisplay', 'right');
+        dummyLeft.initWorld();
+        dummyRight.initWorld();
+        dummyLeft.draw = function(){ this.ctx.fillStyle='#4a2f19'; this.ctx.fillRect(0,0,this.width,this.height); this.ctx.font='30px sans-serif'; this.ctx.fillStyle='#ffdd99'; this.ctx.fillText('⬅️ Klik Mulai',20,100); };
+        dummyRight.draw = function(){ this.ctx.fillStyle='#4a2f19'; this.ctx.fillRect(0,0,this.width,this.height); this.ctx.fillStyle='#ffdd99'; this.ctx.fillText('Mulai ➡️',20,100); };
+        function dummyLoop() { if(dummyLeft) dummyLeft.draw(); if(dummyRight) dummyRight.draw(); requestAnimationFrame(dummyLoop); }
+        dummyLoop();
+        
+        // setelah start, jalankan animasi utama.
+        const origStart = window.startDuelGame;
+        window.startDuelGame = function() {
+            if(!mainLoopActive) {
+                mainLoopActive = true;
+                animate();
+            }
+            origStart();
+        };
+        
+        window.addEventListener('resize', () => {
+            if(leftGame) { leftGame.resizeCanvas(); }
+            if(rightGame) { rightGame.resizeCanvas(); }
+            else { dummyLeft.resizeCanvas(); dummyRight.resizeCanvas(); }
+        });
+    })();
+</script>
+</body>
+</html>

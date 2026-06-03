@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Aktivitas 3D: Kubus & Balok</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'Poppins', 'Arial', sans-serif;
+        }
+        
+        /* Panel kontrol utama - dapat diminimalkan */
+        .control-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(25, 30, 40, 0.9);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 0;
+            color: white;
+            z-index: 20;
+            border: 1px solid rgba(255,255,255,0.25);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+            pointer-events: auto;
+            overflow: hidden;
+        }
+        
+        /* Header panel (untuk drag/meminimize) */
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: rgba(0,0,0,0.5);
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            font-weight: bold;
+        }
+        .panel-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toggle-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 30px;
+            padding: 4px 12px;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .toggle-btn:hover {
+            background: rgba(255,255,255,0.4);
+        }
+        
+        /* Konten panel yang bisa disembunyikan */
+        .panel-content {
+            padding: 15px 20px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .panel-content.collapsed {
+            display: none;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 12px;
+            border-radius: 16px;
+            min-width: 130px;
+        }
+        .control-group label {
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            color: #ccc;
+        }
+        input, button {
+            background: #1e2f3a;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 30px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+        }
+        input {
+            background: #0f1a22;
+            cursor: text;
+            width: 90px;
+        }
+        button {
+            background: #e67e22;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        button:hover {
+            background: #f39c12;
+            transform: scale(1.02);
+        }
+        .btn-kubus {
+            background: #2ecc71;
+        }
+        .btn-kubus:hover {
+            background: #27ae60;
+        }
+        .btn-balok {
+            background: #3498db;
+        }
+        .btn-balok:hover {
+            background: #2980b9;
+        }
+        .btn-reset {
+            background: #e74c3c;
+        }
+        .btn-reset:hover {
+            background: #c0392b;
+        }
+        .info-badge {
+            background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .color-preview {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            background: linear-gradient(45deg, #ff8c00, #ff2d75);
+        }
+        
+        /* Status di atas */
+        #status {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.65);
+            padding: 6px 14px;
+            border-radius: 30px;
+            color: #eee;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 15;
+            backdrop-filter: blur(5px);
+            font-family: monospace;
+        }
+        
+        /* Responsif */
+        @media (max-width: 750px) {
+            .panel-content { flex-direction: column; align-items: stretch; }
+            .control-group { min-width: auto; }
+            input { width: auto; }
+        }
+        
+        /* Gaya untuk transform controls (gizmo) */
+        .transform-controls-gizmo {
+            z-index: 25;
+        }
+        
+        /* Instruksi kecil */
+        .instruction {
+            font-size: 11px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 16px;
+            padding: 4px 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">
+        ✨ Ruang kosong | Klik objek lalu gunakan anak panah untuk memindahkan | Panel ▼ bisa disembunyikan
+    </div>
+    
+    <!-- Panel Kontrol dengan fitur minimize/maximize -->
+    <div class="control-panel" id="mainPanel">
+        <div class="panel-header" id="panelHeader">
+            <h3>
+                <span>🧩 Panel Kontrol 3D</span>
+                <span class="instruction">🖱️ Geser untuk rotasi kamera | Klik objek → Geser anak panah</span>
+            </h3>
+            <button class="toggle-btn" id="togglePanelBtn">▼ Sembunyikan</button>
+        </div>
+        <div class="panel-content" id="panelContent">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <div class="control-group">
+                    <label>➕ Kubus Satuan (1x1x1)</label>
+                    <button id="btnTambahKubus" class="btn-kubus">+ Tambah Kubus</button>
+                </div>
+                <div class="control-group">
+                    <label>📦 Balok (atur ukuran)</label>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <input type="number" id="panjangX" value="2" step="0.5" min="0.5" max="5" placeholder="Panjang X">
+                        <input type="number" id="panjangY" value="1.2" step="0.5" min="0.5" max="5" placeholder="Tinggi Y">
+                        <input type="number" id="panjangZ" value="1.5" step="0.5" min="0.5" max="5" placeholder="Lebar Z">
+                    </div>
+                    <button id="btnTambahBalok" class="btn-balok">➕ Tambah Balok</button>
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <div class="control-group">
+                    <label>🗑️ Hapus Semua Objek</label>
+                    <button id="btnReset" class="btn-reset">Reset Ruang</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Three.js dan ekstensi -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { TransformControls } from 'three/addons/controls/TransformControls.js';
+
+        // --- Setup Scene, Camera, Renderers ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a2a);
+        scene.fog = new THREE.FogExp2(0x0a0a2a, 0.01);
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(6, 5, 7);
+        camera.lookAt(0, 1, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+        
+        // --- OrbitControls (kamera) ---
+        const orbitControls = new OrbitControls(camera, renderer.domElement);
+        orbitControls.enableDamping = true;
+        orbitControls.dampingFactor = 0.05;
+        orbitControls.zoomSpeed = 1.2;
+        orbitControls.rotateSpeed = 1.0;
+        orbitControls.target.set(0, 1.2, 0);
+        
+        // --- TransformControls untuk memindahkan objek ---
+        const transformControls = new TransformControls(camera, renderer.domElement);
+        transformControls.addEventListener('dragging-changed', function (event) {
+            orbitControls.enabled = !event.value;
+        });
+        scene.add(transformControls);
+        
+        // --- Pencahayaan (mendukung shadow realistis) ---
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        
+        const mainLight = new THREE.DirectionalLight(0xfff5e0, 1.2);
+        mainLight.position.set(4, 8, 3);
+        mainLight.castShadow = true;
+        mainLight.receiveShadow = true;
+        mainLight.shadow.mapSize.width = 1024;
+        mainLight.shadow.mapSize.height = 1024;
+        mainLight.shadow.camera.near = 0.5;
+        mainLight.shadow.camera.far = 12;
+        mainLight.shadow.camera.left = -5;
+        mainLight.shadow.camera.right = 5;
+        mainLight.shadow.camera.top = 5;
+        mainLight.shadow.camera.bottom = -5;
+        scene.add(mainLight);
+        
+        const fillLight = new THREE.PointLight(0x5588aa, 0.45);
+        fillLight.position.set(1, 2, 2);
+        scene.add(fillLight);
+        
+        const backRim = new THREE.PointLight(0xffaa66, 0.4);
+        backRim.position.set(-2, 2.5, -3);
+        scene.add(backRim);
+        
+        // Lantai referensi (grid + bidang transparan)
+        const gridHelper = new THREE.GridHelper(16, 20, 0x88aaff, 0x446688);
+        gridHelper.position.y = -0.02;
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = 0.55;
+        scene.add(gridHelper);
+        
+        const groundPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(14, 14),
+            new THREE.MeshStandardMaterial({ color: 0x226688, roughness: 0.7, metalness: 0.1, transparent: true, opacity: 0.2 })
+        );
+        groundPlane.rotation.x = -Math.PI / 2;
+        groundPlane.position.y = -0.03;
+        groundPlane.receiveShadow = true;
+        scene.add(groundPlane);
+        
+        // Sumbu bantu tipis (orientasi) - bisa dihapus jika ingin lebih bersih, tapi biarkan tipis
+        const axesHelper = new THREE.AxesHelper(4);
+        axesHelper.material.transparent = true;
+        axesHelper.material.opacity = 0.2;
+        scene.add(axesHelper);
+        
+        // --- Data penyimpanan objek (hanya mesh, tanpa label) ---
+        let objectsList = []; // menyimpan mesh objek
+        let currentAttachedObject = null; // objek yang sedang dipilih (attach transformControls)
+        
+        // Fungsi untuk melepas kontrol dari objek saat ini
+        function detachTransformControls() {
+            if (currentAttachedObject) {
+                transformControls.detach();
+                currentAttachedObject = null;
+            }
+        }
+        
+        // Fungsi untuk melekatkan transformControls ke objek mesh tertentu
+        function attachToObject(mesh) {
+            detachTransformControls();
+            transformControls.attach(mesh);
+            currentAttachedObject = mesh;
+        }
+        
+        // Helper random warna cerah
+        function randomColor() {
+            return new THREE.Color().setHSL(Math.random(), 0.75, 0.55);
+        }
+        
+        // Tambah kubus satuan (1x1x1) pada posisi acak dalam area
+        function tambahKubusSatuan() {
+            const size = 1;
+            const posX = (Math.random() - 0.5) * 6;
+            const posZ = (Math.random() - 0.5) * 6;
+            const posY = size / 2;
+            
+            const color = randomColor();
+            const geometry = new THREE.BoxGeometry(size, size, size);
+            const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.3, metalness: 0.1 });
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.set(posX, posY, posZ);
+            cube.castShadow = true;
+            cube.receiveShadow = true;
+            scene.add(cube);
+            
+            // Simpan data objek (tanpa label)
+            objectsList.push(cube);
+        }
+        
+        // Tambah balok dengan dimensi custom
+        function tambahBalok(panjangX, panjangY, panjangZ) {
+            let px = Math.max(0.5, parseFloat(panjangX) || 1);
+            let py = Math.max(0.5, parseFloat(panjangY) || 1);
+            let pz = Math.max(0.5, parseFloat(panjangZ) || 1);
+            px = Math.min(px, 5);
+            py = Math.min(py, 5);
+            pz = Math.min(pz, 5);
+            
+            const posX = (Math.random() - 0.5) * 6;
+            const posZ = (Math.random() - 0.5) * 6;
+            const posY = py / 2;
+            
+            const color = randomColor();
+            const geometry = new THREE.BoxGeometry(px, py, pz);
+            const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4, metalness: 0.2 });
+            const balok = new THREE.Mesh(geometry, material);
+            balok.position.set(posX, posY, posZ);
+            balok.castShadow = true;
+            balok.receiveShadow = true;
+            scene.add(balok);
+            
+            objectsList.push(balok);
+        }
+        
+        // Reset semua objek (hapus dari scene dan hapus transformControl jika terattach)
+        function resetSemua() {
+            detachTransformControls();
+            objectsList.forEach(mesh => {
+                scene.remove(mesh);
+                if (mesh.geometry) mesh.geometry.dispose();
+                if (mesh.material) mesh.material.dispose();
+            });
+            objectsList = [];
+        }
+        
+        // --- Event untuk UI ---
+        document.getElementById('btnTambahKubus').addEventListener('click', () => {
+            tambahKubusSatuan();
+        });
+        document.getElementById('btnTambahBalok').addEventListener('click', () => {
+            const xVal = document.getElementById('panjangX').value;
+            const yVal = document.getElementById('panjangY').value;
+            const zVal = document.getElementById('panjangZ').value;
+            tambahBalok(xVal, yVal, zVal);
+        });
+        document.getElementById('btnReset').addEventListener('click', () => {
+            resetSemua();
+        });
+        
+        // --- Panel Minimize/Maximize ---
+        const panelContentDiv = document.getElementById('panelContent');
+        const toggleBtn = document.getElementById('togglePanelBtn');
+        let panelCollapsed = false;
+        toggleBtn.addEventListener('click', () => {
+            panelCollapsed = !panelCollapsed;
+            if (panelCollapsed) {
+                panelContentDiv.classList.add('collapsed');
+                toggleBtn.innerHTML = '▲ Tampilkan Panel';
+            } else {
+                panelContentDiv.classList.remove('collapsed');
+                toggleBtn.innerHTML = '▼ Sembunyikan';
+            }
+        });
+        
+        // --- Seleksi objek dengan Raycaster (klik pada objek untuk attach transform control) ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        
+        function onMouseClick(event) {
+            // Hitung posisi mouse (-1 s/d +1)
+            mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            
+            if (objectsList.length === 0) return;
+            
+            const intersects = raycaster.intersectObjects(objectsList);
+            if (intersects.length > 0) {
+                const selectedMesh = intersects[0].object;
+                attachToObject(selectedMesh);
+            } else {
+                // Klik di ruang kosong: lepas kontrol
+                detachTransformControls();
+            }
+        }
+        
+        // Tambahkan event listener klik pada canvas
+        renderer.domElement.addEventListener('click', onMouseClick);
+        
+        // --- Animasi loop (tanpa sinkronisasi label) ---
+        function animate() {
+            requestAnimationFrame(animate);
+            orbitControls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+        
+        // --- Resize handler ---
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        console.log('Aktivitas siap: Ruang kosong, tanpa label. Tambahkan kubus/balok, klik objek untuk memindahkan dengan gizmo.');
+        
+        // Update status text agar informatif
+        const statusDiv = document.getElementById('status');
+        if (statusDiv) {
+            setInterval(() => {
+                const count = objectsList.length;
+                if (count === 0) statusDiv.innerHTML = '✨ Ruang kosong | Tambahkan kubus atau balok dari panel ▼ | Klik objek untuk drag';
+                else statusDiv.innerHTML = `📦 ${count} objek di ruang | Panel bisa disembunyikan`;
+            }, 500);
+        }
+    </script>
+</body>
+</html>

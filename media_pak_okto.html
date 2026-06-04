@@ -2,235 +2,242 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Aktivitas 3D: Kubus & Balok</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Aktivitas 3D: Kubus & Balok (Pro Mode)</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             font-family: 'Segoe UI', 'Poppins', 'Arial', sans-serif;
+            touch-action: none; /* Mencegah default gesture browser mobile */
         }
         
-        /* Panel kontrol utama - dapat diminimalkan */
+        /* Panel kontrol utama */
         .control-panel {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            background: rgba(25, 30, 40, 0.9);
+            bottom: 15px;
+            left: 10px;
+            right: 10px;
+            background: rgba(25, 30, 40, 0.94);
             backdrop-filter: blur(12px);
-            border-radius: 24px;
+            border-radius: 20px;
             padding: 0;
             color: white;
             z-index: 20;
             border: 1px solid rgba(255,255,255,0.25);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
             transition: all 0.3s ease;
             pointer-events: auto;
             overflow: hidden;
         }
         
-        /* Header panel (untuk drag/meminimize) */
+        /* Header panel */
         .panel-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 20px;
+            padding: 10px 15px;
             background: rgba(0,0,0,0.5);
             cursor: pointer;
             user-select: none;
             border-bottom: 1px solid rgba(255,255,255,0.15);
-            font-weight: bold;
         }
         .panel-header h3 {
             margin: 0;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             display: flex;
-            align-items: center;
-            gap: 8px;
+            flex-direction: column;
+            gap: 2px;
         }
         .toggle-btn {
             background: rgba(255,255,255,0.2);
             border: none;
             border-radius: 30px;
-            padding: 4px 12px;
+            padding: 6px 14px;
             color: white;
             font-size: 0.8rem;
+            font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
+            white-space: nowrap;
         }
-        .toggle-btn:hover {
-            background: rgba(255,255,255,0.4);
-        }
+        .toggle-btn:hover { background: rgba(255,255,255,0.4); }
         
-        /* Konten panel yang bisa disembunyikan */
+        /* Konten panel */
         .panel-content {
-            padding: 15px 20px;
-            transition: all 0.3s ease;
+            padding: 12px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 55vh;
+            overflow-y: auto;
+        }
+        .panel-content.collapsed { display: none; }
+        
+        /* Baris Pengaturan */
+        .panel-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
-        .panel-content.collapsed {
-            display: none;
+            gap: 10px;
+            width: 100%;
         }
         
         .control-group {
             display: flex;
             flex-direction: column;
             gap: 5px;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.4);
             padding: 8px 12px;
-            border-radius: 16px;
-            min-width: 130px;
+            border-radius: 14px;
+            flex: 1;
+            min-width: 140px;
         }
         .control-group label {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             letter-spacing: 0.5px;
-            color: #ccc;
+            color: #bbb;
+            text-transform: uppercase;
         }
+        
+        /* Gaya Pilihan Mode Alat (Radio group bergaya kancing) */
+        .mode-selector {
+            display: flex;
+            gap: 5px;
+            width: 100%;
+        }
+        .mode-btn {
+            flex: 1;
+            background: #2c3e50;
+            border: 2px solid transparent;
+            padding: 10px 5px;
+            border-radius: 12px;
+            color: #afbfc0;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .mode-btn.active {
+            color: white;
+            border-color: #ffffff;
+        }
+        .mode-btn#modeSalin.active { background: #2ecc71; }
+        .mode-btn#modeRotasi.active { background: #9b59b6; }
+        .mode-btn#modeHapus.active { background: #e74c3c; }
+        
         input, button {
             background: #1e2f3a;
             border: none;
-            padding: 8px 12px;
+            padding: 10px 14px;
             border-radius: 30px;
             color: white;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s ease;
             font-size: 13px;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.15s ease;
         }
         input {
             background: #0f1a22;
             cursor: text;
-            width: 90px;
+            width: 50px;
+            text-align: center;
         }
-        button {
-            background: #e67e22;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        button:hover {
-            background: #f39c12;
-            transform: scale(1.02);
-        }
-        .btn-kubus {
-            background: #2ecc71;
-        }
-        .btn-kubus:hover {
-            background: #27ae60;
-        }
-        .btn-balok {
-            background: #3498db;
-        }
-        .btn-balok:hover {
-            background: #2980b9;
-        }
-        .btn-reset {
-            background: #e74c3c;
-        }
-        .btn-reset:hover {
-            background: #c0392b;
-        }
-        .info-badge {
-            background: rgba(0,0,0,0.5);
-            border-radius: 20px;
-            padding: 5px 12px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .color-preview {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-            background: linear-gradient(45deg, #ff8c00, #ff2d75);
-        }
+        
+        /* Warna Aksen Tombol */
+        .btn-kubus { background: #27ae60; }
+        .btn-balok { background: #2980b9; }
+        .btn-action { background: #f39c12; font-size: 12px; padding: 8px 12px; }
+        .btn-reset-all { background: #7f8c8d; font-size: 12px; padding: 8px 12px; }
+        
+        button:active, .mode-btn:active { transform: scale(0.97); }
         
         /* Status di atas */
         #status {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(0,0,0,0.65);
-            padding: 6px 14px;
-            border-radius: 30px;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            background: rgba(10, 10, 30, 0.85);
+            padding: 8px 14px;
+            border-radius: 20px;
             color: #eee;
-            font-size: 12px;
+            font-size: 11px;
             pointer-events: none;
             z-index: 15;
             backdrop-filter: blur(5px);
-            font-family: monospace;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
         }
         
-        /* Responsif */
-        @media (max-width: 750px) {
-            .panel-content { flex-direction: column; align-items: stretch; }
-            .control-group { min-width: auto; }
-            input { width: auto; }
-        }
-        
-        /* Gaya untuk transform controls (gizmo) */
-        .transform-controls-gizmo {
-            z-index: 25;
-        }
-        
-        /* Instruksi kecil */
-        .instruction {
-            font-size: 11px;
-            background: rgba(0,0,0,0.4);
-            border-radius: 16px;
-            padding: 4px 10px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+        .instruction { font-size: 11px; color: #bbb; font-weight: normal; }
+        .balok-inputs { display: flex; gap: 5px; justify-content: space-between; }
+        .balok-inputs input { flex: 1; min-width: 35px; }
+
+        @media (min-width: 768px) {
+            .control-panel { left: 20px; right: 20px; bottom: 20px; }
+            .panel-header h3 { flex-direction: row; gap: 15px; align-items: center; font-size: 1.1rem; }
+            .panel-content { gap: 15px; }
+            .panel-row { flex-wrap: nowrap; }
+            .control-group { flex: none; min-width: 160px; }
+            .mode-selector { width: auto; min-width: 400px; }
+            input { width: 70px; }
         }
     </style>
 </head>
 <body>
-    <div id="status">
-        ✨ Ruang kosong | Klik objek lalu gunakan anak panah untuk memindahkan | Panel ▼ bisa disembunyikan
-    </div>
+    <div id="status">✨ Memuat ruang geometri...</div>
     
-    <!-- Panel Kontrol dengan fitur minimize/maximize -->
     <div class="control-panel" id="mainPanel">
         <div class="panel-header" id="panelHeader">
             <h3>
-                <span>🧩 Panel Kontrol 3D</span>
-                <span class="instruction">🖱️ Geser untuk rotasi kamera | Klik objek → Geser anak panah</span>
+                <span>🧩 Panel Kontrol Interaktif</span>
+                <span class="instruction">💡 Pilih mode alat di bawah untuk mengubah aksi klik/sentuhan objek</span>
             </h3>
             <button class="toggle-btn" id="togglePanelBtn">▼ Sembunyikan</button>
         </div>
+        
         <div class="panel-content" id="panelContent">
-            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                <div class="control-group">
-                    <label>➕ Kubus Satuan (1x1x1)</label>
-                    <button id="btnTambahKubus" class="btn-kubus">+ Tambah Kubus</button>
-                </div>
-                <div class="control-group">
-                    <label>📦 Balok (atur ukuran)</label>
-                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                        <input type="number" id="panjangX" value="2" step="0.5" min="0.5" max="5" placeholder="Panjang X">
-                        <input type="number" id="panjangY" value="1.2" step="0.5" min="0.5" max="5" placeholder="Tinggi Y">
-                        <input type="number" id="panjangZ" value="1.5" step="0.5" min="0.5" max="5" placeholder="Lebar Z">
+            <div class="panel-row">
+                <div class="control-group" style="flex: 2;">
+                    <label>🛠️ Pilihan Mode Alat Aktif</label>
+                    <div class="mode-selector">
+                        <div id="modeSalin" class="mode-btn active">🌿 Salin / Tempel<br><span style="font-size:9px;font-weight:normal;">Double-tap sisi</span></div>
+                        <div id="modeRotasi" class="mode-btn">🔄 Mode Rotasi<br><span style="font-size:9px;font-weight:normal;">Ubah putaran objek</span></div>
+                        <div id="modeHapus" class="mode-btn">🗑️ Mode Hapus<br><span style="font-size:9px;font-weight:normal;">Double-tap lenyap</span></div>
                     </div>
-                    <button id="btnTambahBalok" class="btn-balok">➕ Tambah Balok</button>
+                </div>
+                <div class="control-group" id="subPanelRotasi" style="display: none; justify-content: center;">
+                    <label>⚙️ Kontrol Rotasi</label>
+                    <button id="btnResetRotasi" class="btn-action">↩️ Reset Rotasi Objek</button>
                 </div>
             </div>
-            <div style="display: flex; gap: 12px; align-items: center;">
+            
+            <div class="panel-row">
                 <div class="control-group">
-                    <label>🗑️ Hapus Semua Objek</label>
-                    <button id="btnReset" class="btn-reset">Reset Ruang</button>
+                    <label>➕ KUBUS SATUAN</label>
+                    <button id="btnTambahKubus" class="btn-kubus">+ Kubus (1x1x1)</button>
                 </div>
-
+                <div class="control-group" style="flex: 2;">
+                    <label>📦 BALOK KUSTOM (P x T x L)</label>
+                    <div class="balok-inputs">
+                        <input type="number" id="panjangX" value="2" step="0.5" min="0.5" max="5" title="Panjang (X)">
+                        <input type="number" id="panjangY" value="1" step="0.5" min="0.5" max="5" title="Tinggi (Y)">
+                        <input type="number" id="panjangZ" value="1" step="0.5" min="0.5" max="5" title="Lebar (Z)">
+                        <button id="btnTambahBalok" class="btn-balok">+ Tambah Balok</button>
+                    </div>
+                </div>
+                <div class="control-group" style="flex: none; min-width: 90px; justify-content: center;">
+                    <label>🗑️ RUANG</label>
+                    <button id="btnReset" class="btn-reset-all">Reset All</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Import Three.js dan ekstensi -->
     <script type="importmap">
         {
             "imports": {
@@ -245,89 +252,73 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
+        // --- Variabel State Aplikasi ---
+        let currentMode = 'salin'; // Pilihan: 'salin', 'rotasi', 'hapus'
+        let objectsList = [];
+        let currentAttachedObject = null;
+
         // --- Setup Scene, Camera, Renderers ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a0a2a);
         scene.fog = new THREE.FogExp2(0x0a0a2a, 0.01);
         
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(6, 5, 7);
-        camera.lookAt(0, 1, 0);
+        camera.position.set(6, 6, 8);
         
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(renderer.domElement);
         
-        // --- OrbitControls (kamera) ---
+        // --- OrbitControls (Kamera) ---
         const orbitControls = new OrbitControls(camera, renderer.domElement);
         orbitControls.enableDamping = true;
         orbitControls.dampingFactor = 0.05;
-        orbitControls.zoomSpeed = 1.2;
-        orbitControls.rotateSpeed = 1.0;
-        orbitControls.target.set(0, 1.2, 0);
+        orbitControls.target.set(0, 1, 0);
         
-        // --- TransformControls untuk memindahkan objek ---
+        // --- TransformControls (Gizmo) ---
         const transformControls = new TransformControls(camera, renderer.domElement);
+        
+        // Optimasi ketebalan/ukuran gizmo di mobile layar sentuh
+        const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+        transformControls.setSize(isMobile ? 1.3 : 1.0);
+
         transformControls.addEventListener('dragging-changed', function (event) {
             orbitControls.enabled = !event.value;
         });
         scene.add(transformControls);
         
-        // --- Pencahayaan (mendukung shadow realistis) ---
-        const ambientLight = new THREE.AmbientLight(0x404060);
+        // --- Pencahayaan ---
+        const ambientLight = new THREE.AmbientLight(0x505070);
         scene.add(ambientLight);
         
         const mainLight = new THREE.DirectionalLight(0xfff5e0, 1.2);
-        mainLight.position.set(4, 8, 3);
+        mainLight.position.set(6, 12, 5);
         mainLight.castShadow = true;
-        mainLight.receiveShadow = true;
-        mainLight.shadow.mapSize.width = 1024;
-        mainLight.shadow.mapSize.height = 1024;
-        mainLight.shadow.camera.near = 0.5;
-        mainLight.shadow.camera.far = 12;
-        mainLight.shadow.camera.left = -5;
-        mainLight.shadow.camera.right = 5;
-        mainLight.shadow.camera.top = 5;
-        mainLight.shadow.camera.bottom = -5;
         scene.add(mainLight);
         
-        const fillLight = new THREE.PointLight(0x5588aa, 0.45);
-        fillLight.position.set(1, 2, 2);
+        const fillLight = new THREE.PointLight(0x5588aa, 0.5);
+        fillLight.position.set(3, 5, 4);
         scene.add(fillLight);
         
-        const backRim = new THREE.PointLight(0xffaa66, 0.4);
-        backRim.position.set(-2, 2.5, -3);
-        scene.add(backRim);
-        
-        // Lantai referensi (grid + bidang transparan)
-        const gridHelper = new THREE.GridHelper(16, 20, 0x88aaff, 0x446688);
-        gridHelper.position.y = -0.02;
+        // Grid & Lantai dasar
+        const gridHelper = new THREE.GridHelper(20, 20, 0x88aaff, 0x446688);
         gridHelper.material.transparent = true;
-        gridHelper.material.opacity = 0.55;
+        gridHelper.material.opacity = 0.35;
         scene.add(gridHelper);
         
         const groundPlane = new THREE.Mesh(
-            new THREE.PlaneGeometry(14, 14),
-            new THREE.MeshStandardMaterial({ color: 0x226688, roughness: 0.7, metalness: 0.1, transparent: true, opacity: 0.2 })
+            new THREE.PlaneGeometry(20, 20),
+            new THREE.MeshStandardMaterial({ color: 0x112244, roughness: 0.6 })
         );
         groundPlane.rotation.x = -Math.PI / 2;
-        groundPlane.position.y = -0.03;
+        groundPlane.position.y = -0.01;
         groundPlane.receiveShadow = true;
         scene.add(groundPlane);
         
-        // Sumbu bantu tipis (orientasi) - bisa dihapus jika ingin lebih bersih, tapi biarkan tipis
-        const axesHelper = new THREE.AxesHelper(4);
-        axesHelper.material.transparent = true;
-        axesHelper.material.opacity = 0.2;
-        scene.add(axesHelper);
-        
-        // --- Data penyimpanan objek (hanya mesh, tanpa label) ---
-        let objectsList = []; // menyimpan mesh objek
-        let currentAttachedObject = null; // objek yang sedang dipilih (attach transformControls)
-        
-        // Fungsi untuk melepas kontrol dari objek saat ini
+        // --- Fungsi Manajemen Seleksi Objek ---
         function detachTransformControls() {
             if (currentAttachedObject) {
                 transformControls.detach();
@@ -335,130 +326,251 @@
             }
         }
         
-        // Fungsi untuk melekatkan transformControls ke objek mesh tertentu
         function attachToObject(mesh) {
             detachTransformControls();
+            
+            // Sesuaikan jenis tipe gizmo dengan mode alat yang sedang aktif
+            if (currentMode === 'rotasi') {
+                transformControls.setMode('rotate');
+            } else {
+                transformControls.setMode('translate');
+            }
+            
             transformControls.attach(mesh);
             currentAttachedObject = mesh;
         }
         
-        // Helper random warna cerah
         function randomColor() {
-            return new THREE.Color().setHSL(Math.random(), 0.75, 0.55);
+            return new THREE.Color().setHSL(Math.random(), 0.8, 0.55);
         }
         
-        // Tambah kubus satuan (1x1x1) pada posisi acak dalam area
-        function tambahKubusSatuan() {
-            const size = 1;
-            const posX = (Math.random() - 0.5) * 6;
-            const posZ = (Math.random() - 0.5) * 6;
-            const posY = size / 2;
-            
-            const color = randomColor();
-            const geometry = new THREE.BoxGeometry(size, size, size);
-            const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.3, metalness: 0.1 });
-            const cube = new THREE.Mesh(geometry, material);
-            cube.position.set(posX, posY, posZ);
-            cube.castShadow = true;
-            cube.receiveShadow = true;
-            scene.add(cube);
-            
-            // Simpan data objek (tanpa label)
-            objectsList.push(cube);
-        }
-        
-        // Tambah balok dengan dimensi custom
-        function tambahBalok(panjangX, panjangY, panjangZ) {
-            let px = Math.max(0.5, parseFloat(panjangX) || 1);
-            let py = Math.max(0.5, parseFloat(panjangY) || 1);
-            let pz = Math.max(0.5, parseFloat(panjangZ) || 1);
-            px = Math.min(px, 5);
-            py = Math.min(py, 5);
-            pz = Math.min(pz, 5);
-            
-            const posX = (Math.random() - 0.5) * 6;
-            const posZ = (Math.random() - 0.5) * 6;
-            const posY = py / 2;
-            
-            const color = randomColor();
-            const geometry = new THREE.BoxGeometry(px, py, pz);
-            const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4, metalness: 0.2 });
-            const balok = new THREE.Mesh(geometry, material);
-            balok.position.set(posX, posY, posZ);
-            balok.castShadow = true;
-            balok.receiveShadow = true;
-            scene.add(balok);
-            
-            objectsList.push(balok);
-        }
-        
-        // Reset semua objek (hapus dari scene dan hapus transformControl jika terattach)
-        function resetSemua() {
-            detachTransformControls();
-            objectsList.forEach(mesh => {
-                scene.remove(mesh);
-                if (mesh.geometry) mesh.geometry.dispose();
-                if (mesh.material) mesh.material.dispose();
+        // --- Konstruktor Pembuatan Kubus/Balok ---
+        function buatMeshBox(w, h, d, posisi = null) {
+            const geometry = new THREE.BoxGeometry(w, h, d);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: randomColor(), 
+                roughness: 0.3, 
+                metalness: 0.1 
             });
-            objectsList = [];
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            
+            // Simpan ukuran murni objek demi pembacaan kalkulasi nempel sisi
+            mesh.userData = { w: w, h: h, d: d };
+            
+            if (posisi) {
+                mesh.position.copy(posisi);
+            } else {
+                mesh.position.set((Math.random() - 0.5) * 4, h / 2, (Math.random() - 0.5) * 4);
+            }
+            
+            scene.add(mesh);
+            objectsList.push(mesh);
+            attachToObject(mesh);
+            return mesh;
+        }
+
+        // --- ENGINE INTERAKSI: Klik & Double-Tap Alur Multi-Mode ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        
+        function eksekusiAksiObjek(clientX, clientY, isDoubleClick = false) {
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(objectsList);
+            
+            if (intersects.length > 0) {
+                const hit = intersects[0];
+                const objekTarget = hit.object;
+                
+                // --- 1. JIKA KLIK/TAP TUNGGAL (Pilih Objek) ---
+                if (!isDoubleClick) {
+                    if (currentMode !== 'hapus') {
+                        attachToObject(objekTarget);
+                    } else {
+                        // Di mode hapus, klik tunggal langsung menyeleksi tipis sebagai penanda sasaran hapus
+                        currentAttachedObject = objekTarget;
+                        transformControls.detach();
+                    }
+                    return;
+                }
+                
+                // --- 2. JIKA DOUBLE-CLICK / DOUBLE-TAP TERDETEKSI ---
+                
+                // A. MODE HAPUS
+                if (currentMode === 'hapus') {
+                    detachTransformControls();
+                    scene.remove(objekTarget);
+                    objekTarget.geometry.dispose();
+                    objekTarget.material.dispose();
+                    objectsList = objectsList.filter(item => item !== objekTarget);
+                    return;
+                }
+                
+                // B. MODE ROTASI (Double click pada mode rotasi diprogram mengembalikan ke rotasi awal)
+                if (currentMode === 'rotasi') {
+                    objekTarget.rotation.set(0, 0, 0);
+                    return;
+                }
+                
+                // C. MODE SALIN / TEMPEL (Sisi Snap Kloning)
+                if (currentMode === 'salin') {
+                    const normalSisi = hit.face.normal.clone();
+                    // Konversi arah orientasi lokal sisi mengikuti rotasi objek dunia nyata
+                    normalSisi.transformDirection(objekTarget.matrixWorld);
+                    
+                    const w = objekTarget.userData.w;
+                    const h = objekTarget.userData.h;
+                    const d = objekTarget.userData.d;
+                    
+                    const posisiBaru = objekTarget.position.clone();
+                    
+                    // Ambil arah penempelan berdasarkan batas ketebalan sumbunya masing-masing
+                    if (Math.abs(normalSisi.x) > 0.8) posisiBaru.x += normalSisi.x * w; 
+                    else if (Math.abs(normalSisi.y) > 0.8) posisiBaru.y += normalSisi.y * h;
+                    else if (Math.abs(normalSisi.z) > 0.8) posisiBaru.z += normalSisi.z * d;
+                    
+                    if (posisiBaru.y < h/2) posisiBaru.y = h/2; // Cegah amblas di bawah grid lantai
+                    
+                    buatMeshBox(w, h, d, posisiBaru);
+                }
+                
+            } else {
+                // Sentuhan di ruang kosong lepas kontrol jika tidak sedang menyeret sumbu gizmo
+                if (!transformControls.dragging) {
+                    detachTransformControls();
+                }
+            }
         }
         
-        // --- Event untuk UI ---
+        // --- Event Listener Pendeteksi Desktop & Layar Sentuh Mobile ---
+        let lastTapTime = 0;
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        // Desktop Mouse Click
+        renderer.domElement.addEventListener('click', (e) => {
+            eksekusiAksiObjek(e.clientX, e.clientY, false);
+        });
+        renderer.domElement.addEventListener('dblclick', (e) => {
+            eksekusiAksiObjek(e.clientX, e.clientY, true);
+        });
+
+        // Mobile Screen Tap Polyfill
+        renderer.domElement.addEventListener('touchstart', (e) => {
+            if(e.touches.length === 1) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+        }, {passive: true});
+
+        renderer.domElement.addEventListener('touchend', (e) => {
+            if (e.changedTouches.length === 1) {
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+                
+                // Batasi ambang toleransi gerakan pergeseran kamera agar tidak disalahartikan sebagai ketukan jari
+                if (Math.abs(touchEndX - touchStartX) < 6 && Math.abs(touchEndY - touchStartY) < 6) {
+                    const currentTime = new Date().getTime();
+                    const tapLength = currentTime - lastTapTime;
+                    
+                    if (tapLength < 300 && tapLength > 0) {
+                        eksekusiAksiObjek(touchEndX, touchEndY, true);
+                        e.preventDefault();
+                    } else {
+                        eksekusiAksiObjek(touchEndX, touchEndY, false);
+                    }
+                    lastTapTime = currentTime;
+                }
+            }
+        }, {passive: false});
+
+        // --- Sistem Manajemen Alihan Mode Kontrol Panel ---
+        const btnSalin = document.getElementById('modeSalin');
+        const btnRotasi = document.getElementById('modeRotasi');
+        const btnHapus = document.getElementById('modeHapus');
+        const subPanelRotasi = document.getElementById('subPanelRotasi');
+        
+        function gantiModeAlat(modeTerpilih) {
+            currentMode = modeTerpilih;
+            
+            // Perbarui visual status tombol active
+            btnSalin.classList.remove('active');
+            btnRotasi.classList.remove('active');
+            btnHapus.classList.remove('active');
+            
+            subPanelRotasi.style.display = "none";
+            
+            if (modeTerpilih === 'salin') {
+                btnSalin.classList.add('active');
+                if (currentAttachedObject) transformControls.setMode('translate');
+            } else if (modeTerpilih === 'rotasi') {
+                btnRotasi.classList.add('active');
+                subPanelRotasi.style.display = "flex";
+                if (currentAttachedObject) transformControls.setMode('rotate');
+            } else if (modeTerpilih === 'hapus') {
+                btnHapus.classList.add('active');
+                detachTransformControls(); // Sembunyikan gizmo saat mode eliminasi objek aktif
+            }
+        }
+        
+        btnSalin.addEventListener('click', () => gantiModeAlat('salin'));
+        btnRotasi.addEventListener('click', () => gantiModeAlat('rotasi'));
+        btnHapus.addEventListener('click', () => gantiModeAlat('hapus'));
+        
+        // Aksi Tombol Reset Rotasi khusus objek terpilih
+        document.getElementById('btnResetRotasi').addEventListener('click', () => {
+            if (currentAttachedObject) {
+                currentAttachedObject.rotation.set(0, 0, 0);
+            } else {
+                alert("Silakan ketuk objek yang ingin di-reset rotasinya terlebih dahulu!");
+            }
+        });
+
+        // --- Aksi Tombol Pembuatan & Pengosongan Ruang ---
         document.getElementById('btnTambahKubus').addEventListener('click', () => {
-            tambahKubusSatuan();
-        });
-        document.getElementById('btnTambahBalok').addEventListener('click', () => {
-            const xVal = document.getElementById('panjangX').value;
-            const yVal = document.getElementById('panjangY').value;
-            const zVal = document.getElementById('panjangZ').value;
-            tambahBalok(xVal, yVal, zVal);
-        });
-        document.getElementById('btnReset').addEventListener('click', () => {
-            resetSemua();
+            buatMeshBox(1, 1, 1);
         });
         
-        // --- Panel Minimize/Maximize ---
+        document.getElementById('btnTambahBalok').addEventListener('click', () => {
+            const xVal = parseFloat(document.getElementById('panjangX').value) || 1;
+            const yVal = parseFloat(document.getElementById('panjangY').value) || 1;
+            const zVal = parseFloat(document.getElementById('panjangZ').value) || 1;
+            buatMeshBox(xVal, yVal, zVal);
+        });
+        
+        document.getElementById('btnReset').addEventListener('click', () => {
+            if(confirm("Apakah Anda yakin ingin menghapus semua susunan bangun ruang?")) {
+                detachTransformControls();
+                objectsList.forEach(mesh => {
+                    scene.remove(mesh);
+                    mesh.geometry.dispose();
+                    mesh.material.dispose();
+                });
+                objectsList = [];
+            }
+        });
+        
+        // Fitur Meminimalkan Panel Kontrol
         const panelContentDiv = document.getElementById('panelContent');
         const toggleBtn = document.getElementById('togglePanelBtn');
         let panelCollapsed = false;
+        
         toggleBtn.addEventListener('click', () => {
             panelCollapsed = !panelCollapsed;
             if (panelCollapsed) {
                 panelContentDiv.classList.add('collapsed');
-                toggleBtn.innerHTML = '▲ Tampilkan Panel';
+                toggleBtn.innerHTML = '▲ Tampilkan';
             } else {
                 panelContentDiv.classList.remove('collapsed');
                 toggleBtn.innerHTML = '▼ Sembunyikan';
             }
         });
         
-        // --- Seleksi objek dengan Raycaster (klik pada objek untuk attach transform control) ---
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        
-        function onMouseClick(event) {
-            // Hitung posisi mouse (-1 s/d +1)
-            mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-            mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
-            
-            raycaster.setFromCamera(mouse, camera);
-            
-            if (objectsList.length === 0) return;
-            
-            const intersects = raycaster.intersectObjects(objectsList);
-            if (intersects.length > 0) {
-                const selectedMesh = intersects[0].object;
-                attachToObject(selectedMesh);
-            } else {
-                // Klik di ruang kosong: lepas kontrol
-                detachTransformControls();
-            }
-        }
-        
-        // Tambahkan event listener klik pada canvas
-        renderer.domElement.addEventListener('click', onMouseClick);
-        
-        // --- Animasi loop (tanpa sinkronisasi label) ---
+        // --- Loop Animasi Utama ---
         function animate() {
             requestAnimationFrame(animate);
             orbitControls.update();
@@ -466,25 +578,31 @@
         }
         animate();
         
-        // --- Resize handler ---
-        window.addEventListener('resize', onWindowResize, false);
-        function onWindowResize() {
+        // --- Pengendali Ukuran Jendela Otomatis ---
+        window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        });
         
-        console.log('Aktivitas siap: Ruang kosong, tanpa label. Tambahkan kubus/balok, klik objek untuk memindahkan dengan gizmo.');
-        
-        // Update status text agar informatif
+        // Teks Informasi Petunjuk Dinamis (Status Bar)
         const statusDiv = document.getElementById('status');
-        if (statusDiv) {
-            setInterval(() => {
-                const count = objectsList.length;
-                if (count === 0) statusDiv.innerHTML = '✨ Ruang kosong | Tambahkan kubus atau balok dari panel ▼ | Klik objek untuk drag';
-                else statusDiv.innerHTML = `📦 ${count} objek di ruang | Panel bisa disembunyikan`;
-            }, 500);
-        }
+        setInterval(() => {
+            const count = objectsList.length;
+            if (count === 0) {
+                statusDiv.innerHTML = '✨ Ruang Kosong. Tambahkan objek kubus/balok dari menu panel di bawah untuk memulai.';
+            } else {
+                let pesanPanduan = '';
+                if (currentMode === 'salin') {
+                    pesanPanduan = '🌿 <b>Mode Salin Aktif:</b> Double-click/tap sisi objek untuk menempelkan duplikatnya.';
+                } else if (currentMode === 'rotasi') {
+                    pesanPanduan = '🔄 <b>Mode Rotasi Aktif:</b> Gunakan cincin gizmo melingkar atau double-click objek untuk kembali tegak.';
+                } else if (currentMode === 'hapus') {
+                    pesanPanduan = '🗑️ <b>Mode Hapus Aktif:</b> Hati-hati! <b>Double-click/tap objek</b> akan melenyapkannya dari ruang.';
+                }
+                statusDiv.innerHTML = `📦 Jml: <b>${count} Objek</b> | ${pesanPanduan}`;
+            }
+        }, 350);
     </script>
 </body>
 </html>

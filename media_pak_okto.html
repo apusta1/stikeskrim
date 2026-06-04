@@ -12,64 +12,64 @@
             touch-action: none; /* Mencegah default gesture browser mobile */
         }
         
-        /* Panel kontrol utama */
+        /* Panel kontrol utama - Dibuat lebih ringkas, melayang di sisi kiri/bawah */
         .control-panel {
             position: absolute;
-            bottom: 15px;
-            left: 10px;
-            right: 10px;
-            background: rgba(25, 30, 40, 0.94);
-            backdrop-filter: blur(12px);
-            border-radius: 20px;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            background: rgba(20, 25, 35, 0.95);
+            backdrop-filter: blur(16px);
+            border-radius: 16px;
             padding: 0;
             color: white;
             z-index: 20;
-            border: 1px solid rgba(255,255,255,0.25);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.18);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
             pointer-events: auto;
             overflow: hidden;
         }
         
-        /* Header panel */
+        /* Header panel - Lebih tipis */
         .panel-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 15px;
-            background: rgba(0,0,0,0.5);
+            padding: 8px 14px;
+            background: rgba(0,0,0,0.4);
             cursor: pointer;
             user-select: none;
-            border-bottom: 1px solid rgba(255,255,255,0.15);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         .panel-header h3 {
             margin: 0;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             display: flex;
-            flex-direction: column;
-            gap: 2px;
+            align-items: center;
+            gap: 8px;
         }
         .toggle-btn {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.15);
             border: none;
-            border-radius: 30px;
-            padding: 6px 14px;
+            border-radius: 20px;
+            padding: 4px 10px;
             color: white;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
             white-space: nowrap;
         }
-        .toggle-btn:hover { background: rgba(255,255,255,0.4); }
+        .toggle-btn:hover { background: rgba(255,255,255,0.3); }
         
-        /* Konten panel */
+        /* Konten panel - Padding diperkecil agar compact */
         .panel-content {
-            padding: 12px 15px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            max-height: 55vh;
+            gap: 10px;
+            max-height: 50vh;
             overflow-y: auto;
         }
         .panel-content.collapsed { display: none; }
@@ -78,162 +78,263 @@
         .panel-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
             width: 100%;
         }
         
+        /* Grup Kontrol - Desain minimalis tanpa border tebal */
         .control-group {
             display: flex;
             flex-direction: column;
-            gap: 5px;
-            background: rgba(0,0,0,0.4);
-            padding: 8px 12px;
-            border-radius: 14px;
+            gap: 4px;
+            background: rgba(0,0,0,0.3);
+            padding: 6px 10px;
+            border-radius: 10px;
             flex: 1;
-            min-width: 140px;
+            min-width: 120px;
         }
         .control-group label {
-            font-size: 10px;
-            font-weight: bold;
-            letter-spacing: 0.5px;
-            color: #bbb;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            color: #aaa;
             text-transform: uppercase;
         }
         
-        /* Gaya Pilihan Mode Alat (Radio group bergaya kancing) */
+        /* Pilihan Mode Alat Aktif */
         .mode-selector {
             display: flex;
-            gap: 5px;
+            gap: 4px;
             width: 100%;
         }
         .mode-btn {
             flex: 1;
-            background: #2c3e50;
-            border: 2px solid transparent;
-            padding: 10px 5px;
-            border-radius: 12px;
-            color: #afbfc0;
-            font-size: 12px;
+            background: #233342;
+            border: 1.5px solid transparent;
+            padding: 6px 4px;
+            border-radius: 8px;
+            color: #a0b0b2;
+            font-size: 11px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s ease;
             text-align: center;
             -webkit-tap-highlight-color: transparent;
+            line-height: 1.2;
+        }
+        .mode-btn .sub-text {
+            display: none; /* Sembunyikan penjelasan panjang di mobile agar compact */
         }
         .mode-btn.active {
             color: white;
             border-color: #ffffff;
         }
-        .mode-btn#modeSalin.active { background: #2ecc71; }
-        .mode-btn#modeRotasi.active { background: #9b59b6; }
-        .mode-btn#modeHapus.active { background: #e74c3c; }
+        .mode-btn#modeSalin.active { background: #27ae60; }
+        .mode-btn#modeRotasi.active { background: #8e44ad; }
+        .mode-btn#modeHapus.active { background: #c0392b; }
         
         input, button {
             background: #1e2f3a;
             border: none;
-            padding: 10px 14px;
-            border-radius: 30px;
+            padding: 8px 12px;
+            border-radius: 20px;
             color: white;
             font-weight: bold;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px;
             -webkit-tap-highlight-color: transparent;
             transition: all 0.15s ease;
         }
         input {
             background: #0f1a22;
             cursor: text;
-            width: 50px;
+            width: 40px;
             text-align: center;
+            padding: 6px 4px;
         }
         
         /* Warna Aksen Tombol */
         .btn-kubus { background: #27ae60; }
         .btn-balok { background: #2980b9; }
-        .btn-action { background: #f39c12; font-size: 12px; padding: 8px 12px; }
-        .btn-reset-all { background: #7f8c8d; font-size: 12px; padding: 8px 12px; }
+        .btn-action { background: #e67e22; font-size: 11px; padding: 6px 10px; }
+        .btn-reset-all { background: #7f8c8d; font-size: 11px; padding: 6px 10px; }
         
         button:active, .mode-btn:active { transform: scale(0.97); }
         
-        /* Status di atas */
+        /* Status di atas - Dibuat mengambang minimalis */
         #status {
             position: absolute;
             top: 12px;
             left: 12px;
-            right: 12px;
-            background: rgba(10, 10, 30, 0.85);
-            padding: 8px 14px;
-            border-radius: 20px;
+            right: 64px;
+            background: rgba(10, 10, 25, 0.88);
+            padding: 8px 12px;
+            border-radius: 12px;
             color: #eee;
             font-size: 11px;
             pointer-events: none;
             z-index: 15;
-            backdrop-filter: blur(5px);
-            text-align: center;
+            backdrop-filter: blur(8px);
+            text-align: left;
             border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Tombol Crosshair */
+        #btnCrosshair {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(10, 10, 25, 0.88);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 25;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            padding: 0;
+        }
+        #btnCrosshair:hover { background: rgba(35, 50, 70, 0.9); border-color: white; }
+        
+        /* Panel Modifikasi Sekunder */
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .color-spectrum {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 32px;
+            height: 28px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            background: none;
+            cursor: pointer;
+            padding: 0;
+        }
+        .color-spectrum::-webkit-color-swatch-wrapper { padding: 0; }
+        .color-spectrum::-webkit-color-swatch { border: none; border-radius: 5px; }
+        .color-spectrum::-moz-color-swatch { border: none; border-radius: 5px; }
+
+        .scale-btn-group {
+            display: flex;
+            gap: 4px;
+        }
+        .scale-btn-group button {
+            flex: 1;
+            padding: 6px 8px;
+            font-size: 11px;
+            border-radius: 6px;
         }
         
-        .instruction { font-size: 11px; color: #bbb; font-weight: normal; }
-        .balok-inputs { display: flex; gap: 5px; justify-content: space-between; }
-        .balok-inputs input { flex: 1; min-width: 35px; }
+        .balok-inputs { display: flex; gap: 4px; align-items: center; }
+        .balok-inputs input { flex: 1; min-width: 30px; }
 
+        /* Responsif Layout Desktop - Memindahkan panel ke SISI KIRI agar Workspace LUAS */
         @media (min-width: 768px) {
-            .control-panel { left: 20px; right: 20px; bottom: 20px; }
-            .panel-header h3 { flex-direction: row; gap: 15px; align-items: center; font-size: 1.1rem; }
-            .panel-content { gap: 15px; }
-            .panel-row { flex-wrap: nowrap; }
-            .control-group { flex: none; min-width: 160px; }
-            .mode-selector { width: auto; min-width: 400px; }
-            input { width: 70px; }
+            .control-panel { 
+                top: 65px; 
+                left: 12px; 
+                bottom: auto; 
+                width: 320px; 
+                right: auto;
+                border-radius: 14px;
+            }
+            .panel-header h3 { font-size: 0.9rem; }
+            .panel-content { max-height: calc(100vh - 100px); gap: 12px; }
+            .panel-row { flex-wrap: wrap; }
+            .control-group { flex: none; width: 100%; }
+            .mode-selector { width: 100%; }
+            .mode-btn .sub-text { display: inline; } /* Tampilkan sub-text panduan di desktop */
+            input { width: 45px; }
+            
+            #status {
+                right: 64px;
+                left: 12px;
+                max-width: calc(100% - 80px);
+            }
         }
     </style>
 </head>
 <body>
     <div id="status">✨ Memuat ruang geometri...</div>
+
+    <!-- Tombol Crosshair -->
+    <button id="btnCrosshair" title="Reset Posisi Kamera">🎯</button>
     
     <div class="control-panel" id="mainPanel">
         <div class="panel-header" id="panelHeader">
             <h3>
-                <span>🧩 Panel Kontrol Interaktif</span>
-                <span class="instruction">💡 Pilih mode alat di bawah untuk mengubah aksi klik/sentuhan objek</span>
+                <span>🧩 Panel Kontrol</span>
             </h3>
             <button class="toggle-btn" id="togglePanelBtn">▼ Sembunyikan</button>
         </div>
         
         <div class="panel-content" id="panelContent">
+            <!-- Baris 1: Pilihan Mode Alat -->
             <div class="panel-row">
-                <div class="control-group" style="flex: 2;">
-                    <label>🛠️ Pilihan Mode Alat Aktif</label>
+                <div class="control-group">
+                    <label>🛠️ Mode Alat Aktif</label>
                     <div class="mode-selector">
-                        <div id="modeSalin" class="mode-btn active">🌿 Salin / Tempel<br><span style="font-size:9px;font-weight:normal;">Double-tap sisi</span></div>
-                        <div id="modeRotasi" class="mode-btn">🔄 Mode Rotasi<br><span style="font-size:9px;font-weight:normal;">Ubah putaran objek</span></div>
-                        <div id="modeHapus" class="mode-btn">🗑️ Mode Hapus<br><span style="font-size:9px;font-weight:normal;">Double-tap lenyap</span></div>
+                        <div id="modeSalin" class="mode-btn active">🌿 Salin<span class="sub-text"><br><span style="font-size:8px;font-weight:normal;">Double-tap sisi</span></span></div>
+                        <div id="modeRotasi" class="mode-btn">🔄 Rotasi<span class="sub-text"><br><span style="font-size:8px;font-weight:normal;">Ubah putaran</span></span></div>
+                        <div id="modeHapus" class="mode-btn">🗑️ Hapus<span class="sub-text"><br><span style="font-size:8px;font-weight:normal;">Double-tap objek</span></span></div>
                     </div>
                 </div>
-                <div class="control-group" id="subPanelRotasi" style="display: none; justify-content: center;">
+                <div class="control-group" id="subPanelRotasi" style="display: none; align-items: center;">
                     <label>⚙️ Kontrol Rotasi</label>
-                    <button id="btnResetRotasi" class="btn-action">↩️ Reset Rotasi Objek</button>
+                    <button id="btnResetRotasi" class="btn-action" style="width: 100%;">↩️ Reset Rotasi</button>
+                </div>
+            </div>
+
+            <!-- Baris 2: Modifikasi Objek Terpilih (Warna & Skala) -->
+            <div class="panel-row" id="panelModifikasiObjek" style="background: rgba(255,255,255,0.04); padding: 6px; border-radius: 10px; border: 1px dashed rgba(255,255,255,0.1);">
+                <div class="control-group" style="background: none; padding: 2px 4px;">
+                    <label>🎨 Warna Objek Aktif</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="pickerWarna" class="color-spectrum" value="#ffffff">
+                        <span id="labelWarna" style="font-size: 10px; font-family: monospace; color: #aaa;">#------</span>
+                    </div>
+                </div>
+                <div class="control-group" style="background: none; padding: 2px 4px;">
+                    <label>📐 Ukuran (Rasio Tetap)</label>
+                    <div class="scale-btn-group">
+                        <button id="btnScaleDown" class="btn-action" style="background: #c0392b;">➖ Kecil</button>
+                        <button id="btnScaleUp" class="btn-action" style="background: #27ae60;">➕ Besar</button>
+                    </div>
                 </div>
             </div>
             
+            <!-- Baris 3: Tambah Objek -->
             <div class="panel-row">
                 <div class="control-group">
-                    <label>➕ KUBUS SATUAN</label>
-                    <button id="btnTambahKubus" class="btn-kubus">+ Kubus (1x1x1)</button>
-                </div>
-                <div class="control-group" style="flex: 2;">
-                    <label>📦 BALOK KUSTOM (P x T x L)</label>
-                    <div class="balok-inputs">
-                        <input type="number" id="panjangX" value="2" step="0.5" min="0.5" max="5" title="Panjang (X)">
-                        <input type="number" id="panjangY" value="1" step="0.5" min="0.5" max="5" title="Tinggi (Y)">
-                        <input type="number" id="panjangZ" value="1" step="0.5" min="0.5" max="5" title="Lebar (Z)">
-                        <button id="btnTambahBalok" class="btn-balok">+ Tambah Balok</button>
+                    <label>➕ Buat Objek Baru</label>
+                    <div style="display: flex; gap: 6px; width: 100%;">
+                        <button id="btnTambahKubus" class="btn-kubus" style="flex: 1; font-size: 11px; padding: 8px 4px;">+ Kubus</button>
+                        <div class="balok-inputs" style="flex: 2; background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 20px;">
+                            <input type="number" id="panjangX" value="2" step="0.5" min="0.5" max="5" title="Panjang (X)">
+                            <input type="number" id="panjangY" value="1" step="0.5" min="0.5" max="5" title="Tinggi (Y)">
+                            <input type="number" id="panjangZ" value="1" step="0.5" min="0.5" max="5" title="Lebar (Z)">
+                            <button id="btnTambahBalok" class="btn-balok" style="font-size: 11px; padding: 6px 8px;">+ Balok</button>
+                        </div>
                     </div>
                 </div>
-                <div class="control-group" style="flex: none; min-width: 90px; justify-content: center;">
-                    <label>🗑️ RUANG</label>
-                    <button id="btnReset" class="btn-reset-all">Reset All</button>
-                </div>
+            </div>
+
+            <!-- Baris 4: Reset All -->
+            <div class="panel-row" style="justify-content: flex-end;">
+                <button id="btnReset" class="btn-reset-all" style="width: 100%; padding: 6px 0; border-radius: 10px;">🗑️ Kosongkan Ruang (Reset All)</button>
             </div>
         </div>
     </div>
@@ -252,8 +353,12 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
+        // --- Konstanta Posisi Kamera Awal ---
+        const POSISI_KAMERA_AWAL = new THREE.Vector3(6, 6, 8);
+        const TARGET_KAMERA_AWAL = new THREE.Vector3(0, 1, 0);
+
         // --- Variabel State Aplikasi ---
-        let currentMode = 'salin'; // Pilihan: 'salin', 'rotasi', 'hapus'
+        let currentMode = 'salin'; 
         let objectsList = [];
         let currentAttachedObject = null;
 
@@ -263,7 +368,7 @@
         scene.fog = new THREE.FogExp2(0x0a0a2a, 0.01);
         
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(6, 6, 8);
+        camera.position.copy(POSISI_KAMERA_AWAL);
         
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -276,14 +381,12 @@
         const orbitControls = new OrbitControls(camera, renderer.domElement);
         orbitControls.enableDamping = true;
         orbitControls.dampingFactor = 0.05;
-        orbitControls.target.set(0, 1, 0);
+        orbitControls.target.copy(TARGET_KAMERA_AWAL);
         
         // --- TransformControls (Gizmo) ---
         const transformControls = new TransformControls(camera, renderer.domElement);
-        
-        // Optimasi ketebalan/ukuran gizmo di mobile layar sentuh
         const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
-        transformControls.setSize(isMobile ? 1.3 : 1.0);
+        transformControls.setSize(isMobile ? 1.1 : 0.85); // Sedikit diperkecil agar tidak mengganggu pandangan
 
         transformControls.addEventListener('dragging-changed', function (event) {
             orbitControls.enabled = !event.value;
@@ -318,51 +421,67 @@
         groundPlane.receiveShadow = true;
         scene.add(groundPlane);
         
+        // --- DOM Elemen Fitur ---
+        const pickerWarna = document.getElementById('pickerWarna');
+        const labelWarna = document.getElementById('labelWarna');
+        const panelModifikasi = document.getElementById('panelModifikasiObjek');
+
         // --- Fungsi Manajemen Seleksi Objek ---
         function detachTransformControls() {
             if (currentAttachedObject) {
                 transformControls.detach();
                 currentAttachedObject = null;
+                perbaruiPanelModifikasi();
             }
         }
         
         function attachToObject(mesh) {
             detachTransformControls();
-            
-            // Sesuaikan jenis tipe gizmo dengan mode alat yang sedang aktif
             if (currentMode === 'rotasi') {
                 transformControls.setMode('rotate');
             } else {
                 transformControls.setMode('translate');
             }
-            
             transformControls.attach(mesh);
             currentAttachedObject = mesh;
+            perbaruiPanelModifikasi();
         }
         
         function randomColor() {
             return new THREE.Color().setHSL(Math.random(), 0.8, 0.55);
         }
+
+        function perbaruiPanelModifikasi() {
+            if (currentAttachedObject) {
+                panelModifikasi.style.opacity = "1";
+                panelModifikasi.style.pointerEvents = "auto";
+                const hexWarna = "#" + currentAttachedObject.material.color.getHexString();
+                pickerWarna.value = hexWarna;
+                labelWarna.innerText = hexWarna.toUpperCase();
+            } else {
+                panelModifikasi.style.opacity = "0.3";
+                panelModifikasi.style.pointerEvents = "none";
+                labelWarna.innerText = "#------";
+            }
+        }
         
         // --- Konstruktor Pembuatan Kubus/Balok ---
-        function buatMeshBox(w, h, d, posisi = null) {
+        function buatMeshBox(w, h, d, posisi = null, warnaSama = null) {
             const geometry = new THREE.BoxGeometry(w, h, d);
             const material = new THREE.MeshStandardMaterial({ 
-                color: randomColor(), 
+                color: warnaSama ? warnaSama.clone() : randomColor(), 
                 roughness: 0.3, 
                 metalness: 0.1 
             });
             const mesh = new THREE.Mesh(geometry, material);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
-            
-            // Simpan ukuran murni objek demi pembacaan kalkulasi nempel sisi
             mesh.userData = { w: w, h: h, d: d };
             
             if (posisi) {
                 mesh.position.copy(posisi);
             } else {
-                mesh.position.set((Math.random() - 0.5) * 4, h / 2, (Math.random() - 0.5) * 4);
+                mesh.position.set((Math.random() - 0.5) * 3, h / 2, (Math.random() - 0.5) * 3);
             }
             
             scene.add(mesh);
@@ -371,11 +490,14 @@
             return mesh;
         }
 
-        // --- ENGINE INTERAKSI: Klik & Double-Tap Alur Multi-Mode ---
+        // --- ENGINE INTERAKSI ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         
         function eksekusiAksiObjek(clientX, clientY, isDoubleClick = false) {
+            // Mencegah klik tembus jika menyentuh UI panel kontrol luar workspace
+            if (document.getElementById('mainPanel').contains(document.elementFromPoint(clientX, clientY))) return;
+
             mouse.x = (clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(clientY / window.innerHeight) * 2 + 1;
             
@@ -386,21 +508,17 @@
                 const hit = intersects[0];
                 const objekTarget = hit.object;
                 
-                // --- 1. JIKA KLIK/TAP TUNGGAL (Pilih Objek) ---
                 if (!isDoubleClick) {
                     if (currentMode !== 'hapus') {
                         attachToObject(objekTarget);
                     } else {
-                        // Di mode hapus, klik tunggal langsung menyeleksi tipis sebagai penanda sasaran hapus
                         currentAttachedObject = objekTarget;
                         transformControls.detach();
+                        perbaruiPanelModifikasi();
                     }
                     return;
                 }
                 
-                // --- 2. JIKA DOUBLE-CLICK / DOUBLE-TAP TERDETEKSI ---
-                
-                // A. MODE HAPUS
                 if (currentMode === 'hapus') {
                     detachTransformControls();
                     scene.remove(objekTarget);
@@ -410,56 +528,49 @@
                     return;
                 }
                 
-                // B. MODE ROTASI (Double click pada mode rotasi diprogram mengembalikan ke rotasi awal)
                 if (currentMode === 'rotasi') {
                     objekTarget.rotation.set(0, 0, 0);
                     return;
                 }
                 
-                // C. MODE SALIN / TEMPEL (Sisi Snap Kloning)
                 if (currentMode === 'salin') {
                     const normalSisi = hit.face.normal.clone();
-                    // Konversi arah orientasi lokal sisi mengikuti rotasi objek dunia nyata
                     normalSisi.transformDirection(objekTarget.matrixWorld);
                     
-                    const w = objekTarget.userData.w;
-                    const h = objekTarget.userData.h;
-                    const d = objekTarget.userData.d;
+                    const skalaX = objekTarget.scale.x;
+                    const skalaY = objekTarget.scale.y;
+                    const skalaZ = objekTarget.scale.z;
+
+                    const w = objekTarget.userData.w * skalaX;
+                    const h = objekTarget.userData.h * skalaY;
+                    const d = objekTarget.userData.d * skalaZ;
                     
                     const posisiBaru = objekTarget.position.clone();
                     
-                    // Ambil arah penempelan berdasarkan batas ketebalan sumbunya masing-masing
                     if (Math.abs(normalSisi.x) > 0.8) posisiBaru.x += normalSisi.x * w; 
                     else if (Math.abs(normalSisi.y) > 0.8) posisiBaru.y += normalSisi.y * h;
                     else if (Math.abs(normalSisi.z) > 0.8) posisiBaru.z += normalSisi.z * d;
                     
-                    if (posisiBaru.y < h/2) posisiBaru.y = h/2; // Cegah amblas di bawah grid lantai
+                    if (posisiBaru.y < h/2) posisiBaru.y = h/2;
                     
-                    buatMeshBox(w, h, d, posisiBaru);
+                    const boxBaru = buatMeshBox(objekTarget.userData.w, objekTarget.userData.h, objekTarget.userData.d, posisiBaru, objekTarget.material.color);
+                    boxBaru.scale.set(skalaX, skalaY, skalaZ);
                 }
                 
             } else {
-                // Sentuhan di ruang kosong lepas kontrol jika tidak sedang menyeret sumbu gizmo
                 if (!transformControls.dragging) {
                     detachTransformControls();
                 }
             }
         }
         
-        // --- Event Listener Pendeteksi Desktop & Layar Sentuh Mobile ---
         let lastTapTime = 0;
         let touchStartX = 0;
         let touchStartY = 0;
 
-        // Desktop Mouse Click
-        renderer.domElement.addEventListener('click', (e) => {
-            eksekusiAksiObjek(e.clientX, e.clientY, false);
-        });
-        renderer.domElement.addEventListener('dblclick', (e) => {
-            eksekusiAksiObjek(e.clientX, e.clientY, true);
-        });
+        renderer.domElement.addEventListener('click', (e) => eksekusiAksiObjek(e.clientX, e.clientY, false));
+        renderer.domElement.addEventListener('dblclick', (e) => eksekusiAksiObjek(e.clientX, e.clientY, true));
 
-        // Mobile Screen Tap Polyfill
         renderer.domElement.addEventListener('touchstart', (e) => {
             if(e.touches.length === 1) {
                 touchStartX = e.touches[0].clientX;
@@ -472,7 +583,6 @@
                 const touchEndX = e.changedTouches[0].clientX;
                 const touchEndY = e.changedTouches[0].clientY;
                 
-                // Batasi ambang toleransi gerakan pergeseran kamera agar tidak disalahartikan sebagai ketukan jari
                 if (Math.abs(touchEndX - touchStartX) < 6 && Math.abs(touchEndY - touchStartY) < 6) {
                     const currentTime = new Date().getTime();
                     const tapLength = currentTime - lastTapTime;
@@ -488,7 +598,35 @@
             }
         }, {passive: false});
 
-        // --- Sistem Manajemen Alihan Mode Kontrol Panel ---
+        // --- Event Listener Fitur Utama ---
+        document.getElementById('btnCrosshair').addEventListener('click', () => {
+            camera.position.copy(POSISI_KAMERA_AWAL);
+            orbitControls.target.copy(TARGET_KAMERA_AWAL);
+            orbitControls.update();
+        });
+
+        pickerWarna.addEventListener('input', (e) => {
+            if (currentAttachedObject) {
+                const warnaHex = e.target.value;
+                currentAttachedObject.material.color.set(warnaHex);
+                labelWarna.innerText = warnaHex.toUpperCase();
+            }
+        });
+
+        function ubahUkuranObjekProporsional(faktorSkala) {
+            if (currentAttachedObject) {
+                currentAttachedObject.scale.multiplyScalar(faktorSkala);
+                const tinggiMurni = currentAttachedObject.userData.h;
+                const tinggiSkalaSekarang = tinggiMurni * currentAttachedObject.scale.y;
+                if (currentAttachedObject.position.y < tinggiSkalaSekarang / 2) {
+                    currentAttachedObject.position.y = tinggiSkalaSekarang / 2;
+                }
+            }
+        }
+
+        document.getElementById('btnScaleUp').addEventListener('click', () => ubahUkuranObjekProporsional(1.2));
+        document.getElementById('btnScaleDown').addEventListener('click', () => ubahUkuranObjekProporsional(0.8));
+
         const btnSalin = document.getElementById('modeSalin');
         const btnRotasi = document.getElementById('modeRotasi');
         const btnHapus = document.getElementById('modeHapus');
@@ -496,12 +634,9 @@
         
         function gantiModeAlat(modeTerpilih) {
             currentMode = modeTerpilih;
-            
-            // Perbarui visual status tombol active
             btnSalin.classList.remove('active');
             btnRotasi.classList.remove('active');
             btnHapus.classList.remove('active');
-            
             subPanelRotasi.style.display = "none";
             
             if (modeTerpilih === 'salin') {
@@ -513,7 +648,7 @@
                 if (currentAttachedObject) transformControls.setMode('rotate');
             } else if (modeTerpilih === 'hapus') {
                 btnHapus.classList.add('active');
-                detachTransformControls(); // Sembunyikan gizmo saat mode eliminasi objek aktif
+                detachTransformControls();
             }
         }
         
@@ -521,19 +656,11 @@
         btnRotasi.addEventListener('click', () => gantiModeAlat('rotasi'));
         btnHapus.addEventListener('click', () => gantiModeAlat('hapus'));
         
-        // Aksi Tombol Reset Rotasi khusus objek terpilih
         document.getElementById('btnResetRotasi').addEventListener('click', () => {
-            if (currentAttachedObject) {
-                currentAttachedObject.rotation.set(0, 0, 0);
-            } else {
-                alert("Silakan ketuk objek yang ingin di-reset rotasinya terlebih dahulu!");
-            }
+            if (currentAttachedObject) currentAttachedObject.rotation.set(0, 0, 0);
         });
 
-        // --- Aksi Tombol Pembuatan & Pengosongan Ruang ---
-        document.getElementById('btnTambahKubus').addEventListener('click', () => {
-            buatMeshBox(1, 1, 1);
-        });
+        document.getElementById('btnTambahKubus').addEventListener('click', () => buatMeshBox(1, 1, 1));
         
         document.getElementById('btnTambahBalok').addEventListener('click', () => {
             const xVal = parseFloat(document.getElementById('panjangX').value) || 1;
@@ -554,7 +681,6 @@
             }
         });
         
-        // Fitur Meminimalkan Panel Kontrol
         const panelContentDiv = document.getElementById('panelContent');
         const toggleBtn = document.getElementById('togglePanelBtn');
         let panelCollapsed = false;
@@ -569,6 +695,8 @@
                 toggleBtn.innerHTML = '▼ Sembunyikan';
             }
         });
+
+        perbaruiPanelModifikasi();
         
         // --- Loop Animasi Utama ---
         function animate() {
@@ -578,29 +706,23 @@
         }
         animate();
         
-        // --- Pengendali Ukuran Jendela Otomatis ---
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
         
-        // Teks Informasi Petunjuk Dinamis (Status Bar)
         const statusDiv = document.getElementById('status');
         setInterval(() => {
             const count = objectsList.length;
             if (count === 0) {
-                statusDiv.innerHTML = '✨ Ruang Kosong. Tambahkan objek kubus/balok dari menu panel di bawah untuk memulai.';
+                statusDiv.innerHTML = '✨ Ruang Kosong. Tambahkan kubus/balok untuk memulai.';
             } else {
                 let pesanPanduan = '';
-                if (currentMode === 'salin') {
-                    pesanPanduan = '🌿 <b>Mode Salin Aktif:</b> Double-click/tap sisi objek untuk menempelkan duplikatnya.';
-                } else if (currentMode === 'rotasi') {
-                    pesanPanduan = '🔄 <b>Mode Rotasi Aktif:</b> Gunakan cincin gizmo melingkar atau double-click objek untuk kembali tegak.';
-                } else if (currentMode === 'hapus') {
-                    pesanPanduan = '🗑️ <b>Mode Hapus Aktif:</b> Hati-hati! <b>Double-click/tap objek</b> akan melenyapkannya dari ruang.';
-                }
-                statusDiv.innerHTML = `📦 Jml: <b>${count} Objek</b> | ${pesanPanduan}`;
+                if (currentMode === 'salin') pesanPanduan = '🌿 Salin Aktif: Pilih objek untuk warna/skala atau double-tap sisi.';
+                else if (currentMode === 'rotasi') pesanPanduan = '🔄 Rotasi Aktif: Seret cincin gizmo objek.';
+                else if (currentMode === 'hapus') pesanPanduan = '🗑️ Hapus Aktif: Double-tap objek untuk melenyapkan.';
+                statusDiv.innerHTML = `📦 Objek: <b>${count}</b> | ${pesanPanduan}`;
             }
         }, 350);
     </script>

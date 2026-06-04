@@ -271,7 +271,7 @@
     <div id="status">✨ Memuat ruang geometri...</div>
 
     <!-- Tombol Crosshair -->
-    <button id="btnCrosshair" title="Reset Posisi Kamera">🎯</button>
+    <button id="btnCrosshair" title="Reset Posisi Kamera">𖦏</button>
     
     <div class="control-panel" id="mainPanel">
         <div class="panel-header" id="panelHeader">
@@ -282,19 +282,20 @@
         </div>
         
         <div class="panel-content" id="panelContent">
-            <!-- Baris 1: Pilihan Mode Alat -->
+
+            <!-- Baris 1: Tambah Objek -->
             <div class="panel-row">
                 <div class="control-group">
-                    <label>🛠️ Mode Alat Aktif</label>
-                    <div class="mode-selector">
-                        <div id="modeSalin" class="mode-btn active">🌿 Salin<span class="sub-text"><br><span style="font-size:8px;font-weight:normal;">Double-tap sisi</span></span></div>
-                        <div id="modeRotasi" class="mode-btn">🔄 Rotasi<span class="sub-text"><br><span style="font-size:8px;font-weight:normal;">Ubah putaran</span></span></div>
-                        <div id="modeHapus" class="mode-btn">🗑️ Hapus<span class="sub-text"><br><span style="font-size:8px;font-weight:normal;">Double-tap objek</span></span></div>
+                    <label>➕ Buat Objek Baru</label>
+                    <div style="display: flex; gap: 6px; width: 100%;">
+                        <button id="btnTambahKubus" class="btn-kubus" style="flex: 1; font-size: 11px; padding: 8px 4px;">+ Kubus</button>
+                        <div class="balok-inputs" style="flex: 2; background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 20px;">
+                            <input type="number" id="panjangX" value="2" step="0.5" min="0.5" max="5" title="Panjang (X)">
+                            <input type="number" id="panjangY" value="1" step="0.5" min="0.5" max="5" title="Tinggi (Y)">
+                            <input type="number" id="panjangZ" value="1" step="0.5" min="0.5" max="5" title="Lebar (Z)">
+                            <button id="btnTambahBalok" class="btn-balok" style="font-size: 11px; padding: 6px 8px;">+ Balok</button>
+                        </div>
                     </div>
-                </div>
-                <div class="control-group" id="subPanelRotasi" style="display: none; align-items: center;">
-                    <label>⚙️ Kontrol Rotasi</label>
-                    <button id="btnResetRotasi" class="btn-action" style="width: 100%;">↩️ Reset Rotasi</button>
                 </div>
             </div>
 
@@ -315,26 +316,26 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Baris 3: Tambah Objek -->
+
+            <!-- Baris 3: Pilihan Mode Alat -->
             <div class="panel-row">
                 <div class="control-group">
-                    <label>➕ Buat Objek Baru</label>
-                    <div style="display: flex; gap: 6px; width: 100%;">
-                        <button id="btnTambahKubus" class="btn-kubus" style="flex: 1; font-size: 11px; padding: 8px 4px;">+ Kubus</button>
-                        <div class="balok-inputs" style="flex: 2; background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 20px;">
-                            <input type="number" id="panjangX" value="2" step="0.5" min="0.5" max="5" title="Panjang (X)">
-                            <input type="number" id="panjangY" value="1" step="0.5" min="0.5" max="5" title="Tinggi (Y)">
-                            <input type="number" id="panjangZ" value="1" step="0.5" min="0.5" max="5" title="Lebar (Z)">
-                            <button id="btnTambahBalok" class="btn-balok" style="font-size: 11px; padding: 6px 8px;">+ Balok</button>
-                        </div>
+                    <label>🛠️ Mode Alat Aktif</label>
+                    <div class="mode-selector">
+                        <div id="modeSalin" class="mode-btn active">🌿 Salin<span class="sub-text"><br><span style="font-size:8px;font-weight:normal;">Double-tap sisi</span></span></div>
+                        <div id="modeRotasi" class="mode-btn">🔄 Rotasi<span class="sub-text"><br><span style="font-size:8px;font-weight:normal;">Ubah putaran</span></span></div>
+                        <div id="modeHapus" class="mode-btn">🗑️ Hapus<span class="sub-text"><br><span style="font-size:8px;font-weight:normal;">Double-tap objek</span></span></div>
                     </div>
                 </div>
+                <div class="control-group" id="subPanelRotasi" style="display: none; align-items: center;">
+                    <label>⚙️ Kontrol Rotasi</label>
+                    <button id="btnResetRotasi" class="btn-action" style="width: 100%;">↩️ Reset Rotasi</button>
+                </div>
             </div>
-
+         
             <!-- Baris 4: Reset All -->
             <div class="panel-row" style="justify-content: flex-end;">
-                <button id="btnReset" class="btn-reset-all" style="width: 100%; padding: 6px 0; border-radius: 10px;">🗑️ Kosongkan Ruang (Reset All)</button>
+                <button id="btnReset" class="btn-reset-all" style="width: 100%; padding: 6px 0; border-radius: 10px;">🗑️ Hapus Semua Objek (<i>Reset All</i>)</button>
             </div>
         </div>
     </div>

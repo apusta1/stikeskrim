@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Belajar Menulis Huruf a</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #fef9f0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            overflow: hidden;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #d97706;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #78716c;
+            margin-bottom: 18px;
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 340px;
+            height: 340px;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 32px rgba(217,119,6,0.13), 0 2px 8px rgba(0,0,0,0.07);
+            border: 2.5px solid #fde68a;
+        }
+
+        #tracing-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 26px;
+        }
+
+        /* Ghost letter background */
+        .letter-ghost {
+            font-size: 260px;
+            font-family: Georgia, 'Times New Roman', serif;
+            fill: #fef3c7;
+            font-style: italic;
+            dominant-baseline: auto;
+        }
+
+        /* Guide path (grey outline) */
+        .bg-path {
+            fill: none;
+            stroke: #e5e7eb;
+            stroke-width: 36;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Arrow/dot indicators */
+        .start-dot {
+            fill: #fbbf24;
+            opacity: 0.9;
+        }
+
+        /* Active drawn path */
+        .trace-path {
+            fill: none;
+            stroke: #f59e0b;
+            stroke-width: 28;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Hand guide — now lives inside SVG, no CSS needed */
+
+        /* Progress bar */
+        #progress-bar-wrap {
+            margin-top: 18px;
+            width: 340px;
+            height: 10px;
+            background: #fde68a;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
+            border-radius: 99px;
+            transition: width 0.1s linear;
+        }
+
+        #btn-reset {
+            margin-top: 16px;
+            padding: 10px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            background: #f59e0b;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(245,158,11,0.3);
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        #btn-reset:hover { background: #d97706; }
+        #btn-reset:active { transform: scale(0.97); }
+
+        #success-msg {
+            display: none;
+            font-size: 22px;
+            font-weight: 700;
+            color: #16a34a;
+            margin-top: 14px;
+            animation: popIn 0.4s cubic-bezier(.36,1.56,.64,1) both;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<p class="title">✏️ Belajar Menulis Huruf</p>
+<p class="subtitle">Ikuti jejak tangan untuk menulis huruf <strong>a</strong></p>
+
+<div id="canvas-container">
+    <svg id="tracing-svg" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg">
+
+        <!-- Ghost letter for visual context -->
+        <text class="letter-ghost" x="40" y="295">a</text>
+
+        <!--
+            PATH untuk huruf 'ɑ' (open-tail a):
+            Dimulai dari kanan atas lingkaran, melingkar berlawanan jarum jam penuh,
+            lalu turun membentuk ekor kanan bawah.
+
+            Titik awal: kanan tengah lingkaran (~230, 145)
+            1. Kurva ke atas kiri
+            2. Lengkung atas (puncak)
+            3. Lengkung kiri
+            4. Lengkung bawah
+            5. Kembali ke kanan + tutup lingkaran
+            6. Turun membentuk batang/ekor kanan
+        -->
+        <path id="bg-path" class="bg-path"
+            d="M 222,148
+               C 222,105  160,80   118,105
+               C  76,130   76,210  118,232
+               C 160,254  222,230  222,190
+               L 222,232"
+        />
+
+        <!-- Dot penanda titik mulai -->
+        <circle class="start-dot" cx="222" cy="148" r="13"/>
+        <text x="222" y="153" text-anchor="middle" font-size="13" font-weight="bold" fill="white" pointer-events="none">1</text>
+
+        <!-- Trace path (drawn progressively) -->
+        <path id="active-path" class="trace-path"
+            d="M 222,148
+               C 222,105  160,80   118,105
+               C  76,130   76,210  118,232
+               C 160,254  222,230  222,190
+               L 222,232"
+        />
+
+        <!-- Hand guide — inside SVG so coordinates always match -->
+        <text id="hand-guide" font-size="34" text-anchor="middle"
+              dominant-baseline="middle" pointer-events="none"
+              x="222" y="148">👆</text>
+    </svg>
+</div>
+
+<div id="progress-bar-wrap">
+    <div id="progress-bar"></div>
+</div>
+
+<div id="success-msg">🎉 Hebat! Kamu berhasil!</div>
+
+<button id="btn-reset">🔄 Coba Lagi</button>
+
+<script>
+    const activePath  = document.getElementById('active-path');
+    const bgPath      = document.getElementById('bg-path');
+    const svg         = document.getElementById('tracing-svg');
+    const handGuide   = document.getElementById('hand-guide');
+    const btnReset    = document.getElementById('btn-reset');
+    const progressBar = document.getElementById('progress-bar');
+    const successMsg  = document.getElementById('success-msg');
+    const container   = document.getElementById('canvas-container');
+
+    // ── Path metrics ──────────────────────────────────────────────
+    const pathLength = activePath.getTotalLength();
+    activePath.style.strokeDasharray  = pathLength;
+    activePath.style.strokeDashoffset = pathLength;   // fully hidden
+
+    let currentProgress = 0;   // 0..1
+    let isDrawing       = false;
+    let completed       = false;
+
+    // ── Hand guide animation via RAF + getPointAtLength ──────────────
+    // Animates the SVG <text> emoji directly along the path using JS.
+    // This is pixel-perfect because it uses the same path element.
+    const GUIDE_DURATION = 3000; // ms for one full pass
+    const GUIDE_FADE_END = 0.85; // fraction where it starts fading out
+    let guideStart = null;
+    let guideVisible = true;
+
+    function animateHand(ts) {
+        if (!guideVisible) return;
+        if (!guideStart) guideStart = ts;
+        const elapsed  = (ts - guideStart) % GUIDE_DURATION;
+        const fraction = elapsed / GUIDE_DURATION;
+
+        // Move along path
+        const pt = activePath.getPointAtLength(fraction * pathLength);
+        // Offset so fingertip (bottom-left of 👆) lands on the path point
+        handGuide.setAttribute('x', pt.x + 14);
+        handGuide.setAttribute('y', pt.y - 14);
+
+        // Fade out near end, invisible at start of each cycle
+        if (fraction > GUIDE_FADE_END) {
+            handGuide.style.opacity = 1 - (fraction - GUIDE_FADE_END) / (1 - GUIDE_FADE_END);
+        } else if (fraction < 0.04) {
+            handGuide.style.opacity = fraction / 0.04;
+        } else {
+            handGuide.style.opacity = 1;
+        }
+
+        requestAnimationFrame(animateHand);
+    }
+    requestAnimationFrame(animateHand);
+
+    // ── Drawing progress ──────────────────────────────────────────
+    function updatePathDrawing() {
+        activePath.style.strokeDashoffset = pathLength * (1 - currentProgress);
+        progressBar.style.width = (currentProgress * 100) + '%';
+    }
+
+    // ── Coordinate helper: screen → SVG viewBox ───────────────────
+    function getSVGCoords(e) {
+        const rect = svg.getBoundingClientRect();
+        const touch = e.touches ? e.touches[0] : e;
+        return {
+            x: ((touch.clientX - rect.left) / rect.width)  * 340,
+            y: ((touch.clientY - rect.top)  / rect.height) * 340
+        };
+    }
+
+    // ── Tracing logic ─────────────────────────────────────────────
+    const TOLERANCE   = 42;   // px in SVG units — generous for children
+    const MAX_JUMP    = 0.15; // max single-step forward jump (fraction of path)
+
+    function checkTracing(e) {
+        if (!isDrawing || completed) return;
+        const { x, y } = getSVGCoords(e);
+
+        // Current anchor point on path
+        const anchorLen = currentProgress * pathLength;
+
+        // Search forward from current anchor up to MAX_JUMP
+        const searchLen = Math.min(pathLength, anchorLen + MAX_JUMP * pathLength);
+        const steps     = 30;
+        let   bestLen   = -1;
+        let   bestDist  = Infinity;
+
+        for (let i = 0; i <= steps; i++) {
+            const testLen   = anchorLen + (searchLen - anchorLen) * (i / steps);
+            const pt        = activePath.getPointAtLength(testLen);
+            const dist      = Math.hypot(x - pt.x, y - pt.y);
+            if (dist < bestDist) { bestDist = dist; bestLen = testLen; }
+        }
+
+        if (bestDist <= TOLERANCE && bestLen > anchorLen) {
+            currentProgress = bestLen / pathLength;
+            updatePathDrawing();
+            // Hide guide once user starts drawing
+            guideVisible = false;
+            handGuide.style.opacity = '0';
+        }
+
+        if (currentProgress >= 0.95 && !completed) {
+            currentProgress = 1.0;
+            updatePathDrawing();
+            completed  = true;
+            isDrawing  = false;
+            handleSuccess();
+        }
+    }
+
+    // ── Success ───────────────────────────────────────────────────
+    function handleSuccess() {
+        playSoundA();
+
+        confetti({ particleCount: 160, spread: 90, origin: { y: 0.55 },
+                   colors: ['#fbbf24','#f59e0b','#10b981','#3b82f6','#ec4899'] });
+        setTimeout(() => confetti({
+            particleCount: 80, angle: 60, spread: 55, origin: { x: 0 }
+        }), 250);
+        setTimeout(() => confetti({
+            particleCount: 80, angle: 120, spread: 55, origin: { x: 1 }
+        }), 400);
+
+        successMsg.style.display = 'block';
+    }
+
+    function playSoundA() {
+        if (!('speechSynthesis' in window)) return;
+        // Cancel any pending speech first
+        window.speechSynthesis.cancel();
+        const u  = new SpeechSynthesisUtterance('a');
+        u.lang   = 'id-ID';
+        u.rate   = 0.75;
+        u.pitch  = 1.1;
+        u.volume = 1;
+        window.speechSynthesis.speak(u);
+    }
+
+    // ── Event listeners ───────────────────────────────────────────
+    svg.addEventListener('mousedown',  (e) => { isDrawing = true;  checkTracing(e); });
+    window.addEventListener('mouseup', ()  => { isDrawing = false; });
+    svg.addEventListener('mousemove',  checkTracing);
+
+    svg.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        isDrawing = true;
+        checkTracing(e);
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => { isDrawing = false; });
+
+    svg.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        checkTracing(e);
+    }, { passive: false });
+
+    // ── Reset ─────────────────────────────────────────────────────
+    btnReset.addEventListener('click', () => {
+        currentProgress = 0;
+        completed       = false;
+        isDrawing       = false;
+        updatePathDrawing();
+        guideVisible        = true;
+        guideStart          = null;
+        handGuide.style.opacity = '1';
+        requestAnimationFrame(animateHand);
+        successMsg.style.display  = 'none';
+    });
+</script>
+</body>
+</html>

@@ -353,8 +353,8 @@
         const fraction = elapsed / GUIDE_DURATION;
 
         const pt = activePath.getPointAtLength(fraction * pathLength);
-        handGuide.setAttribute('x', pt.x + 14);
-        handGuide.setAttribute('y', pt.y - 14);
+        handGuide.setAttribute('x', pt.x + 10);
+        handGuide.setAttribute('y', pt.y - 8);
 
         if (fraction > GUIDE_FADE_END) {
             handGuide.style.opacity = 1 - (fraction - GUIDE_FADE_END) / (1 - GUIDE_FADE_END);

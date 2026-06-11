@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Belajar Menulis Huruf a</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
@@ -16,9 +16,9 @@
             justify-content: center;
             background: #fef9f0;
             font-family: 'Segoe UI', Arial, sans-serif;
-            overflow: hidden;
-            user-select: none;
-            touch-action: none;
+            /* PERBAIKAN 1: Hapus touch-action: none dari body */
+            padding: 20px 16px;
+            overflow-y: auto;
         }
 
         .title {
@@ -33,12 +33,15 @@
             font-size: 14px;
             color: #78716c;
             margin-bottom: 18px;
+            text-align: center;
         }
 
         #canvas-container {
             position: relative;
-            width: 340px;
-            height: 340px;
+            width: min(340px, 85vw);
+            height: min(340px, 85vw);
+            max-width: 340px;
+            max-height: 340px;
             background: white;
             border-radius: 28px;
             box-shadow: 0 8px 32px rgba(217,119,6,0.13), 0 2px 8px rgba(0,0,0,0.07);
@@ -50,15 +53,16 @@
             height: 100%;
             display: block;
             border-radius: 26px;
+            /* PERBAIKAN 1: touch-action hanya di SVG */
+            touch-action: none;
         }
 
         /* Ghost letter background */
         .letter-ghost {
             font-size: 260px;
-            font-family: Georgia, 'Times New Roman', serif;
+            font-family: 'Georgia', 'Times New Roman', serif;
             fill: #fef3c7;
             font-style: italic;
-            dominant-baseline: auto;
         }
 
         /* Guide path (grey outline) */
@@ -75,6 +79,17 @@
             fill: #fbbf24;
             opacity: 0.9;
         }
+        
+        /* PERBAIKAN 2: Area sentuh lebih besar - layer transparan di atas path */
+        .touch-area {
+            fill: none;
+            stroke: transparent;
+            stroke-width: 68;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            pointer-events: stroke;
+            cursor: pointer;
+        }
 
         /* Active drawn path */
         .trace-path {
@@ -83,14 +98,14 @@
             stroke-width: 28;
             stroke-linecap: round;
             stroke-linejoin: round;
+            pointer-events: none;
         }
-
-        /* Hand guide — now lives inside SVG, no CSS needed */
 
         /* Progress bar */
         #progress-bar-wrap {
             margin-top: 18px;
-            width: 340px;
+            width: min(340px, 85vw);
+            max-width: 340px;
             height: 10px;
             background: #fde68a;
             border-radius: 99px;
@@ -107,16 +122,19 @@
 
         #btn-reset {
             margin-top: 16px;
-            padding: 10px 28px;
-            font-size: 15px;
+            padding: 12px 32px;
+            font-size: 16px;
             font-weight: 600;
             background: #f59e0b;
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: 40px;
             cursor: pointer;
             box-shadow: 0 3px 10px rgba(245,158,11,0.3);
             transition: background 0.2s, transform 0.1s;
+            /* PERBAIKAN 3: Tombol lebih besar untuk mobile */
+            min-height: 48px;
+            min-width: 140px;
         }
 
         #btn-reset:hover { background: #d97706; }
@@ -129,18 +147,53 @@
             color: #16a34a;
             margin-top: 14px;
             animation: popIn 0.4s cubic-bezier(.36,1.56,.64,1) both;
+            text-align: center;
+        }
+        
+        #voice-status {
+            font-size: 11px;
+            color: #a8a29e;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .voice-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #d4d4d8;
+            display: inline-block;
+        }
+        
+        .voice-dot.active {
+            background-color: #22c55e;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
         }
 
         @keyframes popIn {
             from { transform: scale(0.5); opacity: 0; }
             to   { transform: scale(1);   opacity: 1; }
         }
+        
+        /* PERBAIKAN 2: Feedback haptic untuk sentuhan */
+        @media (hover: none) and (pointer: coarse) {
+            .touch-area:active {
+                cursor: grabbing;
+            }
+        }
     </style>
 </head>
 <body>
 
 <p class="title">✏️ Belajar Menulis Huruf</p>
-<p class="subtitle">Ikuti jejak tangan untuk menulis huruf <strong>a</strong></p>
+<p class="subtitle">Ikuti jejak untuk menulis huruf <strong>a</strong></p>
 
 <div id="canvas-container">
     <svg id="tracing-svg" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg">
@@ -149,19 +202,19 @@
         <text class="letter-ghost" x="40" y="295">a</text>
 
         <!--
-            PATH untuk huruf 'ɑ' (open-tail a):
-            Dimulai dari kanan atas lingkaran, melingkar berlawanan jarum jam penuh,
-            lalu turun membentuk ekor kanan bawah.
-
-            Titik awal: kanan tengah lingkaran (~230, 145)
-            1. Kurva ke atas kiri
-            2. Lengkung atas (puncak)
-            3. Lengkung kiri
-            4. Lengkung bawah
-            5. Kembali ke kanan + tutup lingkaran
-            6. Turun membentuk batang/ekor kanan
+            PATH untuk huruf 'ɑ' (open-tail a)
+            Titik awal: kanan tengah lingkaran (~222, 148)
         -->
         <path id="bg-path" class="bg-path"
+            d="M 222,148
+               C 222,105  160,80   118,105
+               C  76,130   76,210  118,232
+               C 160,254  222,230  222,190
+               L 222,232"
+        />
+        
+        <!-- PERBAIKAN 2: Area sentuh yang lebih besar (transparan, stroke lebih tebal) -->
+        <path id="touch-area" class="touch-area"
             d="M 222,148
                C 222,105  160,80   118,105
                C  76,130   76,210  118,232
@@ -182,7 +235,7 @@
                L 222,232"
         />
 
-        <!-- Hand guide — inside SVG so coordinates always match -->
+        <!-- Hand guide -->
         <text id="hand-guide" font-size="34" text-anchor="middle"
               dominant-baseline="middle" pointer-events="none"
               x="222" y="148">👆</text>
@@ -197,30 +250,99 @@
 
 <button id="btn-reset">🔄 Coba Lagi</button>
 
+<!-- PERBAIKAN 3: Indikator status suara -->
+<div id="voice-status">
+    <span class="voice-dot" id="voice-dot"></span>
+    <span id="voice-text">Suara siap</span>
+</div>
+
 <script>
     const activePath  = document.getElementById('active-path');
     const bgPath      = document.getElementById('bg-path');
+    const touchArea   = document.getElementById('touch-area');  // PERBAIKAN 2
     const svg         = document.getElementById('tracing-svg');
     const handGuide   = document.getElementById('hand-guide');
     const btnReset    = document.getElementById('btn-reset');
     const progressBar = document.getElementById('progress-bar');
     const successMsg  = document.getElementById('success-msg');
     const container   = document.getElementById('canvas-container');
+    const voiceDot    = document.getElementById('voice-dot');
+    const voiceText   = document.getElementById('voice-text');
 
     // ── Path metrics ──────────────────────────────────────────────
     const pathLength = activePath.getTotalLength();
     activePath.style.strokeDasharray  = pathLength;
-    activePath.style.strokeDashoffset = pathLength;   // fully hidden
+    activePath.style.strokeDashoffset = pathLength;
 
-    let currentProgress = 0;   // 0..1
+    let currentProgress = 0;
     let isDrawing       = false;
     let completed       = false;
+    
+    // PERBAIKAN 3: Inisialisasi SpeechSynthesis dengan interaksi pengguna
+    let speechReady = false;
+    let pendingSpeech = null;
+    
+    function initSpeech() {
+        if (speechReady) return;
+        if (!('speechSynthesis' in window)) {
+            voiceText.textContent = 'Suara tidak didukung';
+            voiceDot.style.opacity = '0.5';
+            return;
+        }
+        
+        // Coba inisialisasi dengan utterance kosong
+        const testUtterance = new SpeechSynthesisUtterance('');
+        testUtterance.lang = 'id-ID';
+        
+        speechReady = true;
+        voiceDot.classList.add('active');
+        voiceText.textContent = 'Suara siap ✅';
+        
+        // Jika ada suara yang tertunda, mainkan
+        if (pendingSpeech) {
+            playSoundA();
+            pendingSpeech = null;
+        }
+    }
+    
+    // Panggil initSpeech saat user pertama kali touch/mouse di area gambar
+    function ensureSpeechReady() {
+        if (!speechReady) {
+            initSpeech();
+        }
+    }
 
-    // ── Hand guide animation via RAF + getPointAtLength ──────────────
-    // Animates the SVG <text> emoji directly along the path using JS.
-    // This is pixel-perfect because it uses the same path element.
-    const GUIDE_DURATION = 3000; // ms for one full pass
-    const GUIDE_FADE_END = 0.85; // fraction where it starts fading out
+    function playSoundA() {
+        if (!('speechSynthesis' in window)) return;
+        
+        // PERBAIKAN 3: Coba inisialisasi jika belum
+        if (!speechReady) {
+            pendingSpeech = true;
+            return;
+        }
+        
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance('a');
+        u.lang = 'id-ID';
+        u.rate = 0.75;
+        u.pitch = 1.1;
+        u.volume = 1;
+        
+        // Untuk mobile, pastikan utterance selesai dengan baik
+        u.onerror = function(e) {
+            console.log('Speech error, retrying...');
+            setTimeout(() => {
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(u);
+            }, 100);
+        };
+        
+        window.speechSynthesis.speak(u);
+    }
+
+    // ── Hand guide animation ──────────────────────────────────────
+    const GUIDE_DURATION = 3000;
+    const GUIDE_FADE_END = 0.85;
     let guideStart = null;
     let guideVisible = true;
 
@@ -230,13 +352,10 @@
         const elapsed  = (ts - guideStart) % GUIDE_DURATION;
         const fraction = elapsed / GUIDE_DURATION;
 
-        // Move along path
         const pt = activePath.getPointAtLength(fraction * pathLength);
-        // Offset so fingertip (bottom-left of 👆) lands on the path point
         handGuide.setAttribute('x', pt.x + 14);
         handGuide.setAttribute('y', pt.y - 14);
 
-        // Fade out near end, invisible at start of each cycle
         if (fraction > GUIDE_FADE_END) {
             handGuide.style.opacity = 1 - (fraction - GUIDE_FADE_END) / (1 - GUIDE_FADE_END);
         } else if (fraction < 0.04) {
@@ -258,27 +377,36 @@
     // ── Coordinate helper: screen → SVG viewBox ───────────────────
     function getSVGCoords(e) {
         const rect = svg.getBoundingClientRect();
-        const touch = e.touches ? e.touches[0] : e;
+        let clientX, clientY;
+        
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        
         return {
-            x: ((touch.clientX - rect.left) / rect.width)  * 340,
-            y: ((touch.clientY - rect.top)  / rect.height) * 340
+            x: ((clientX - rect.left) / rect.width) * 340,
+            y: ((clientY - rect.top) / rect.height) * 340
         };
     }
 
     // ── Tracing logic ─────────────────────────────────────────────
-    const TOLERANCE   = 42;   // px in SVG units — generous for children
-    const MAX_JUMP    = 0.15; // max single-step forward jump (fraction of path)
+    const TOLERANCE   = 48;   // PERBAIKAN 2: Sedikit dinaikkan untuk anak-anak
+    const MAX_JUMP    = 0.15;
 
     function checkTracing(e) {
         if (!isDrawing || completed) return;
+        
+        // PERBAIKAN 3: Inisialisasi speech saat mulai menggambar
+        ensureSpeechReady();
+        
         const { x, y } = getSVGCoords(e);
-
-        // Current anchor point on path
         const anchorLen = currentProgress * pathLength;
-
-        // Search forward from current anchor up to MAX_JUMP
         const searchLen = Math.min(pathLength, anchorLen + MAX_JUMP * pathLength);
-        const steps     = 30;
+        const steps     = 40; // PERBAIKAN 2: Lebih banyak steps untuk akurasi
         let   bestLen   = -1;
         let   bestDist  = Infinity;
 
@@ -292,9 +420,17 @@
         if (bestDist <= TOLERANCE && bestLen > anchorLen) {
             currentProgress = bestLen / pathLength;
             updatePathDrawing();
-            // Hide guide once user starts drawing
-            guideVisible = false;
-            handGuide.style.opacity = '0';
+            
+            // Sembunyikan guide saat mulai menggambar
+            if (guideVisible && currentProgress > 0.02) {
+                guideVisible = false;
+                handGuide.style.opacity = '0';
+            }
+            
+            // PERBAIKAN 2: Haptic feedback ringan (jika didukung)
+            if (navigator.vibrate && currentProgress > 0 && Math.floor(currentProgress * 10) !== Math.floor((currentProgress - 0.01) * 10)) {
+                navigator.vibrate(8);
+            }
         }
 
         if (currentProgress >= 0.95 && !completed) {
@@ -309,6 +445,11 @@
     // ── Success ───────────────────────────────────────────────────
     function handleSuccess() {
         playSoundA();
+        
+        // Haptic feedback sukses
+        if (navigator.vibrate) {
+            navigator.vibrate([50, 100, 50]);
+        }
 
         confetti({ particleCount: 160, spread: 90, origin: { y: 0.55 },
                    colors: ['#fbbf24','#f59e0b','#10b981','#3b82f6','#ec4899'] });
@@ -322,38 +463,35 @@
         successMsg.style.display = 'block';
     }
 
-    function playSoundA() {
-        if (!('speechSynthesis' in window)) return;
-        // Cancel any pending speech first
-        window.speechSynthesis.cancel();
-        const u  = new SpeechSynthesisUtterance('a');
-        u.lang   = 'id-ID';
-        u.rate   = 0.75;
-        u.pitch  = 1.1;
-        u.volume = 1;
-        window.speechSynthesis.speak(u);
-    }
-
     // ── Event listeners ───────────────────────────────────────────
-    svg.addEventListener('mousedown',  (e) => { isDrawing = true;  checkTracing(e); });
-    window.addEventListener('mouseup', ()  => { isDrawing = false; });
-    svg.addEventListener('mousemove',  checkTracing);
-
-    svg.addEventListener('touchstart', (e) => {
+    // PERBAIKAN 1 & 2: Gunakan touch-area untuk event, lebih responsif
+    const eventTarget = touchArea;
+    
+    function startDraw(e) {
         e.preventDefault();
         isDrawing = true;
+        ensureSpeechReady();  // PERBAIKAN 3
         checkTracing(e);
-    }, { passive: false });
-
-    window.addEventListener('touchend', () => { isDrawing = false; });
-
-    svg.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        checkTracing(e);
-    }, { passive: false });
-
-    // ── Reset ─────────────────────────────────────────────────────
+    }
+    
+    function endDraw() {
+        isDrawing = false;
+    }
+    
+    // Mouse events
+    eventTarget.addEventListener('mousedown', startDraw);
+    window.addEventListener('mouseup', endDraw);
+    eventTarget.addEventListener('mousemove', checkTracing);
+    
+    // Touch events
+    eventTarget.addEventListener('touchstart', startDraw, { passive: false });
+    window.addEventListener('touchend', endDraw);
+    eventTarget.addEventListener('touchmove', checkTracing, { passive: false });
+    
+    // PERBAIKAN 3: Inisialisasi speech saat tombol reset disentuh
     btnReset.addEventListener('click', () => {
+        ensureSpeechReady();
+        
         currentProgress = 0;
         completed       = false;
         isDrawing       = false;
@@ -364,6 +502,13 @@
         requestAnimationFrame(animateHand);
         successMsg.style.display  = 'none';
     });
+    
+    // PERBAIKAN 3: Inisialisasi speech dengan tap pertama di mana saja
+    document.body.addEventListener('touchstart', ensureSpeechReady, { once: true });
+    document.body.addEventListener('mousedown', ensureSpeechReady, { once: true });
+    
+    // Inisialisasi awal
+    updatePathDrawing();
 </script>
 </body>
 </html>

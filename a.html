@@ -247,7 +247,7 @@
     <div id="progress-bar"></div>
 </div>
 
-<div id="stroke-label">Stroke 1: Buat lengkungan dulu</div>
+<div id="stroke-label">Langkah 1: Buat lengkungan dulu</div>
 
 <div id="success-msg">🎉 Hebat! Kamu berhasil!</div>
 
@@ -415,7 +415,7 @@
                 guideVisible = true; guideStart = null;
                 requestAnimationFrame(animateHand);
 
-                strokeLabel.textContent = 'Stroke 2: Tarik garis lurus ↓';
+                strokeLabel.textContent = 'Langkah 2: Tarik garis lurus ↓';
                 if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
 
             } else {
@@ -484,7 +484,7 @@
         requestAnimationFrame(animateHand);
 
         successMsg.style.display = 'none';
-        strokeLabel.textContent = 'Stroke 1: Buat lengkungan dulu';
+        strokeLabel.textContent = 'Langkah 1: Buat lengkungan dulu';
     });
 
     document.body.addEventListener('touchstart', ensureSpeechReady, { once: true });

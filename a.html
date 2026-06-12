@@ -16,7 +16,6 @@
             justify-content: center;
             background: #fef9f0;
             font-family: 'Segoe UI', Arial, sans-serif;
-            /* PERBAIKAN 1: Hapus touch-action: none dari body */
             padding: 20px 16px;
             overflow-y: auto;
         }
@@ -53,34 +52,18 @@
             height: 100%;
             display: block;
             border-radius: 26px;
-            /* PERBAIKAN 1: touch-action hanya di SVG */
             touch-action: none;
         }
 
-        /* Ghost letter background */
-        .letter-ghost {
-            font-size: 260px;
-            font-family: 'Georgia', 'Times New Roman', serif;
-            fill: #fef3c7;
-            font-style: italic;
-        }
-
-        /* Guide path (grey outline) */
         .bg-path {
             fill: none;
-            stroke: #e5e7eb;
-            stroke-width: 36;
             stroke-linecap: round;
             stroke-linejoin: round;
+            stroke-width: 34;
         }
+        .bg-inactive { stroke: #e5e7eb; }
+        .bg-active   { stroke: #fde68a; }
 
-        /* Arrow/dot indicators */
-        .start-dot {
-            fill: #fbbf24;
-            opacity: 0.9;
-        }
-        
-        /* PERBAIKAN 2: Area sentuh lebih besar - layer transparan di atas path */
         .touch-area {
             fill: none;
             stroke: transparent;
@@ -91,7 +74,6 @@
             cursor: pointer;
         }
 
-        /* Active drawn path */
         .trace-path {
             fill: none;
             stroke: #f59e0b;
@@ -101,7 +83,9 @@
             pointer-events: none;
         }
 
-        /* Progress bar */
+        .start-dot        { fill: #fbbf24; opacity: 0.9; }
+        .start-dot-dim    { fill: #d1d5db; opacity: 0.6; }
+
         #progress-bar-wrap {
             margin-top: 18px;
             width: min(340px, 85vw);
@@ -111,7 +95,6 @@
             border-radius: 99px;
             overflow: hidden;
         }
-
         #progress-bar {
             height: 100%;
             width: 0%;
@@ -120,8 +103,18 @@
             transition: width 0.1s linear;
         }
 
+        #stroke-label {
+            margin-top: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #92400e;
+            background: #fef3c7;
+            border-radius: 20px;
+            padding: 4px 16px;
+        }
+
         #btn-reset {
-            margin-top: 16px;
+            margin-top: 14px;
             padding: 12px 32px;
             font-size: 16px;
             font-weight: 600;
@@ -132,12 +125,10 @@
             cursor: pointer;
             box-shadow: 0 3px 10px rgba(245,158,11,0.3);
             transition: background 0.2s, transform 0.1s;
-            /* PERBAIKAN 3: Tombol lebih besar untuk mobile */
             min-height: 48px;
             min-width: 140px;
         }
-
-        #btn-reset:hover { background: #d97706; }
+        #btn-reset:hover  { background: #d97706; }
         #btn-reset:active { transform: scale(0.97); }
 
         #success-msg {
@@ -149,7 +140,7 @@
             animation: popIn 0.4s cubic-bezier(.36,1.56,.64,1) both;
             text-align: center;
         }
-        
+
         #voice-status {
             font-size: 11px;
             color: #a8a29e;
@@ -158,35 +149,17 @@
             align-items: center;
             gap: 6px;
         }
-        
         .voice-dot {
-            width: 8px;
-            height: 8px;
+            width: 8px; height: 8px;
             border-radius: 50%;
             background-color: #d4d4d8;
             display: inline-block;
         }
-        
-        .voice-dot.active {
-            background-color: #22c55e;
-            animation: pulse 1s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
+        .voice-dot.active { background-color: #22c55e; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes popIn {
             from { transform: scale(0.5); opacity: 0; }
             to   { transform: scale(1);   opacity: 1; }
-        }
-        
-        /* PERBAIKAN 2: Feedback haptic untuk sentuhan */
-        @media (hover: none) and (pointer: coarse) {
-            .touch-area:active {
-                cursor: grabbing;
-            }
         }
     </style>
 </head>
@@ -198,47 +171,64 @@
 <div id="canvas-container">
     <svg id="tracing-svg" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg">
 
-        <!-- Ghost letter for visual context -->
-        <text class="letter-ghost" x="40" y="295"></text>
-
         <!--
-            PATH untuk huruf 'ɑ' (open-tail a)
-            Titik awal: kanan tengah lingkaran (~222, 148)
+            Huruf α (lowercase a) — 2 stroke:
+            STROKE 1 : Oval penuh — mulai kanan-tengah, melingkar ke kiri, kembali ke titik awal.
+            STROKE 2 : Garis lurus vertikal — dari kanan atas (222,155) ke bawah (222,238).
+            Bersama-sama membentuk 'a' yang jelas.
         -->
-        <path id="bg-path" class="bg-path"
-            d="M 222,148
-               C 222,105  160,80   118,105
-               C  76,130   76,210  118,232
-               C 160,254  222,230  222,190
-               L 222,232"
+
+        <!-- STROKE 1 background guide (aktif/kuning muda) -->
+        <path id="bg-path-1" class="bg-path bg-active"
+            d="M 222,155
+               C 222,108  160,82  118,108
+               C  76,134   76,212  118,235
+               C 160,258  222,232  222,182
+               C 222,168  222,160  222,155"
         />
-        
-        <!-- PERBAIKAN 2: Area sentuh yang lebih besar (transparan, stroke lebih tebal) -->
-        <path id="touch-area" class="touch-area"
-            d="M 222,148
-               C 222,105  160,80   118,105
-               C  76,130   76,210  118,232
-               C 160,254  222,230  222,190
-               L 222,232"
+        <!-- STROKE 2 background guide (awalnya abu, menyala setelah stroke 1 done) -->
+        <path id="bg-path-2" class="bg-path bg-inactive"
+            d="M 222,155 L 222,238"
         />
 
-        <!-- Dot penanda titik mulai -->
-        <circle class="start-dot" cx="222" cy="148" r="13"/>
-        <text x="222" y="153" text-anchor="middle" font-size="13" font-weight="bold" fill="white" pointer-events="none">1</text>
-
-        <!-- Trace path (drawn progressively) -->
-        <path id="active-path" class="trace-path"
-            d="M 222,148
-               C 222,105  160,80   118,105
-               C  76,130   76,210  118,232
-               C 160,254  222,230  222,190
-               L 222,232"
+        <!-- Touch areas -->
+        <path id="touch-area-1" class="touch-area"
+            d="M 222,155
+               C 222,108  160,82  118,108
+               C  76,134   76,212  118,235
+               C 160,258  222,232  222,182
+               C 222,168  222,160  222,155"
         />
+        <path id="touch-area-2" class="touch-area"
+            d="M 222,155 L 222,238"
+        />
+
+        <!-- Trace paths (drawn progressively) -->
+        <path id="active-path-1" class="trace-path"
+            d="M 222,155
+               C 222,108  160,82  118,108
+               C  76,134   76,212  118,235
+               C 160,258  222,232  222,182
+               C 222,168  222,160  222,155"
+        />
+        <path id="active-path-2" class="trace-path"
+            d="M 222,155 L 222,238"
+        />
+
+        <!-- Start dot stroke 1 (kuning/aktif) -->
+        <circle id="dot-1" class="start-dot" cx="222" cy="155" r="13"/>
+        <text x="222" y="160" text-anchor="middle" font-size="13" font-weight="bold"
+              fill="white" pointer-events="none">1</text>
+
+        <!-- Start dot stroke 2 (abu-abu/menunggu) -->
+        <circle id="dot-2" class="start-dot-dim" cx="222" cy="155" r="13"/>
+        <text id="dot2-num" x="222" y="160" text-anchor="middle" font-size="13"
+              font-weight="bold" fill="white" pointer-events="none" opacity="0.5">2</text>
 
         <!-- Hand guide -->
         <text id="hand-guide" font-size="34" text-anchor="middle"
               dominant-baseline="middle" pointer-events="none"
-              x="222" y="148">👆</text>
+              x="222" y="165">👆</text>
     </svg>
 </div>
 
@@ -246,116 +236,85 @@
     <div id="progress-bar"></div>
 </div>
 
+<div id="stroke-label">Stroke 1 dari 2 — Buat lingkaran 🔵</div>
+
 <div id="success-msg">🎉 Hebat! Kamu berhasil!</div>
 
 <button id="btn-reset">🔄 Coba Lagi</button>
 
-<!-- PERBAIKAN 3: Indikator status suara -->
 <div id="voice-status">
     <span class="voice-dot" id="voice-dot"></span>
     <span id="voice-text">Suara siap</span>
 </div>
 
 <script>
-    const activePath  = document.getElementById('active-path');
-    const bgPath      = document.getElementById('bg-path');
-    const touchArea   = document.getElementById('touch-area');  // PERBAIKAN 2
     const svg         = document.getElementById('tracing-svg');
+    const activePath1 = document.getElementById('active-path-1');
+    const activePath2 = document.getElementById('active-path-2');
+    const bgPath1     = document.getElementById('bg-path-1');
+    const bgPath2     = document.getElementById('bg-path-2');
+    const touchArea1  = document.getElementById('touch-area-1');
+    const touchArea2  = document.getElementById('touch-area-2');
+    const dot1        = document.getElementById('dot-1');
+    const dot2        = document.getElementById('dot-2');
+    const dot2Num     = document.getElementById('dot2-num');
     const handGuide   = document.getElementById('hand-guide');
     const btnReset    = document.getElementById('btn-reset');
     const progressBar = document.getElementById('progress-bar');
     const successMsg  = document.getElementById('success-msg');
-    const container   = document.getElementById('canvas-container');
+    const strokeLabel = document.getElementById('stroke-label');
     const voiceDot    = document.getElementById('voice-dot');
     const voiceText   = document.getElementById('voice-text');
 
-    // ── Path metrics ──────────────────────────────────────────────
-    const pathLength = activePath.getTotalLength();
-    activePath.style.strokeDasharray  = pathLength;
-    activePath.style.strokeDashoffset = pathLength;
+    // Path lengths
+    const pathLength1 = activePath1.getTotalLength();
+    const pathLength2 = activePath2.getTotalLength();
 
-    let currentProgress = 0;
-    let isDrawing       = false;
-    let completed       = false;
-    
-    // PERBAIKAN 3: Inisialisasi SpeechSynthesis dengan interaksi pengguna
-    let speechReady = false;
-    let pendingSpeech = null;
-    
+    activePath1.style.strokeDasharray  = pathLength1;
+    activePath1.style.strokeDashoffset = pathLength1;
+    activePath2.style.strokeDasharray  = pathLength2;
+    activePath2.style.strokeDashoffset = pathLength2;
+
+    // State
+    let currentStroke = 1;
+    let progress1 = 0, progress2 = 0;
+    let isDrawing = false, completed = false;
+    let speechReady = false, pendingSpeech = false;
+    let guideVisible = true, guideStart = null;
+
+    // Speech
     function initSpeech() {
         if (speechReady) return;
-        if (!('speechSynthesis' in window)) {
-            voiceText.textContent = 'Suara tidak didukung';
-            voiceDot.style.opacity = '0.5';
-            return;
-        }
-        
-        // Coba inisialisasi dengan utterance kosong
-        const testUtterance = new SpeechSynthesisUtterance('');
-        testUtterance.lang = 'id-ID';
-        
+        if (!('speechSynthesis' in window)) { voiceText.textContent = 'Suara tidak didukung'; return; }
         speechReady = true;
         voiceDot.classList.add('active');
         voiceText.textContent = 'Suara siap ✅';
-        
-        // Jika ada suara yang tertunda, mainkan
-        if (pendingSpeech) {
-            playSoundA();
-            pendingSpeech = null;
-        }
+        if (pendingSpeech) { playSoundA(); pendingSpeech = false; }
     }
-    
-    // Panggil initSpeech saat user pertama kali touch/mouse di area gambar
-    function ensureSpeechReady() {
-        if (!speechReady) {
-            initSpeech();
-        }
-    }
-
+    function ensureSpeechReady() { if (!speechReady) initSpeech(); }
     function playSoundA() {
         if (!('speechSynthesis' in window)) return;
-        
-        // PERBAIKAN 3: Coba inisialisasi jika belum
-        if (!speechReady) {
-            pendingSpeech = true;
-            return;
-        }
-        
+        if (!speechReady) { pendingSpeech = true; return; }
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance('a');
-        u.lang = 'id-ID';
-        u.rate = 0.75;
-        u.pitch = 1.1;
-        u.volume = 1;
-        
-        // Untuk mobile, pastikan utterance selesai dengan baik
-        u.onerror = function(e) {
-            console.log('Speech error, retrying...');
-            setTimeout(() => {
-                window.speechSynthesis.cancel();
-                window.speechSynthesis.speak(u);
-            }, 100);
-        };
-        
+        u.lang = 'id-ID'; u.rate = 0.75; u.pitch = 1.1; u.volume = 1;
+        u.onerror = () => setTimeout(() => window.speechSynthesis.speak(u), 100);
         window.speechSynthesis.speak(u);
     }
 
-    // ── Hand guide animation ──────────────────────────────────────
+    // Hand guide animation
     const GUIDE_DURATION = 3000;
     const GUIDE_FADE_END = 0.85;
-    let guideStart = null;
-    let guideVisible = true;
-
     function animateHand(ts) {
         if (!guideVisible) return;
         if (!guideStart) guideStart = ts;
+        const ap  = currentStroke === 1 ? activePath1 : activePath2;
+        const len = currentStroke === 1 ? pathLength1  : pathLength2;
         const elapsed  = (ts - guideStart) % GUIDE_DURATION;
         const fraction = elapsed / GUIDE_DURATION;
-
-        const pt = activePath.getPointAtLength(fraction * pathLength);
-        handGuide.setAttribute('x', pt.x );
+        const pt = ap.getPointAtLength(fraction * len);
+        handGuide.setAttribute('x', pt.x);
         handGuide.setAttribute('y', pt.y + 10);
-
         if (fraction > GUIDE_FADE_END) {
             handGuide.style.opacity = 1 - (fraction - GUIDE_FADE_END) / (1 - GUIDE_FADE_END);
         } else if (fraction < 0.04) {
@@ -363,151 +322,164 @@
         } else {
             handGuide.style.opacity = 1;
         }
-
         requestAnimationFrame(animateHand);
     }
     requestAnimationFrame(animateHand);
 
-    // ── Drawing progress ──────────────────────────────────────────
     function updatePathDrawing() {
-        activePath.style.strokeDashoffset = pathLength * (1 - currentProgress);
-        progressBar.style.width = (currentProgress * 100) + '%';
+        activePath1.style.strokeDashoffset = pathLength1 * (1 - progress1);
+        activePath2.style.strokeDashoffset = pathLength2 * (1 - progress2);
+        // Stroke 1 = 65% bobot, stroke 2 = 35% bobot
+        progressBar.style.width = ((progress1 * 0.65) + (progress2 * 0.35)) * 100 + '%';
     }
 
-    // ── Coordinate helper: screen → SVG viewBox ───────────────────
     function getSVGCoords(e) {
         const rect = svg.getBoundingClientRect();
-        let clientX, clientY;
-        
-        if (e.touches) {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
-        } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
-        }
-        
+        const src  = e.touches ? e.touches[0] : e;
         return {
-            x: ((clientX - rect.left) / rect.width) * 340,
-            y: ((clientY - rect.top) / rect.height) * 340
+            x: ((src.clientX - rect.left) / rect.width)  * 340,
+            y: ((src.clientY - rect.top)  / rect.height) * 340
         };
     }
 
-    // ── Tracing logic ─────────────────────────────────────────────
-    const TOLERANCE   = 48;   // PERBAIKAN 2: Sedikit dinaikkan untuk anak-anak
-    const MAX_JUMP    = 0.15;
+    const TOLERANCE = 48;
+    const MAX_JUMP  = 0.15;
 
     function checkTracing(e) {
         if (!isDrawing || completed) return;
-        
-        // PERBAIKAN 3: Inisialisasi speech saat mulai menggambar
         ensureSpeechReady();
-        
-        const { x, y } = getSVGCoords(e);
-        const anchorLen = currentProgress * pathLength;
-        const searchLen = Math.min(pathLength, anchorLen + MAX_JUMP * pathLength);
-        const steps     = 40; // PERBAIKAN 2: Lebih banyak steps untuk akurasi
-        let   bestLen   = -1;
-        let   bestDist  = Infinity;
 
-        for (let i = 0; i <= steps; i++) {
-            const testLen   = anchorLen + (searchLen - anchorLen) * (i / steps);
-            const pt        = activePath.getPointAtLength(testLen);
-            const dist      = Math.hypot(x - pt.x, y - pt.y);
-            if (dist < bestDist) { bestDist = dist; bestLen = testLen; }
+        const { x, y } = getSVGCoords(e);
+        const ap     = currentStroke === 1 ? activePath1 : activePath2;
+        const pLen   = currentStroke === 1 ? pathLength1  : pathLength2;
+        const prog   = currentStroke === 1 ? progress1    : progress2;
+
+        const anchorLen = prog * pLen;
+        const searchLen = Math.min(pLen, anchorLen + MAX_JUMP * pLen);
+        let bestLen = -1, bestDist = Infinity;
+
+        for (let i = 0; i <= 40; i++) {
+            const tLen = anchorLen + (searchLen - anchorLen) * (i / 40);
+            const pt   = ap.getPointAtLength(tLen);
+            const d    = Math.hypot(x - pt.x, y - pt.y);
+            if (d < bestDist) { bestDist = d; bestLen = tLen; }
         }
 
         if (bestDist <= TOLERANCE && bestLen > anchorLen) {
-            currentProgress = bestLen / pathLength;
+            if (currentStroke === 1) progress1 = bestLen / pLen;
+            else                     progress2 = bestLen / pLen;
             updatePathDrawing();
-            
-            // Sembunyikan guide saat mulai menggambar
-            if (guideVisible && currentProgress > 0.02) {
+
+            const curProg = currentStroke === 1 ? progress1 : progress2;
+            if (guideVisible && curProg > 0.02) {
                 guideVisible = false;
                 handGuide.style.opacity = '0';
             }
-            
-            // PERBAIKAN 2: Haptic feedback ringan (jika didukung)
-            if (navigator.vibrate && currentProgress > 0 && Math.floor(currentProgress * 10) !== Math.floor((currentProgress - 0.01) * 10)) {
-                navigator.vibrate(8);
+            if (navigator.vibrate) {
+                if (Math.floor(curProg * 10) !== Math.floor((curProg - 0.01) * 10))
+                    navigator.vibrate(8);
             }
         }
 
-        if (currentProgress >= 0.95 && !completed) {
-            currentProgress = 1.0;
-            updatePathDrawing();
-            completed  = true;
-            isDrawing  = false;
-            handleSuccess();
+        const curProg = currentStroke === 1 ? progress1 : progress2;
+        if (curProg >= 0.95 && !completed) {
+            if (currentStroke === 1) {
+                // Selesai stroke 1 → aktifkan stroke 2
+                progress1 = 1.0;
+                updatePathDrawing();
+                currentStroke = 2;
+                isDrawing = false;
+
+                // Update visual dots
+                dot1.setAttribute('r', '9');
+                dot1.style.opacity = '0.35';
+                dot2.setAttribute('class', 'start-dot');
+                dot2Num.setAttribute('opacity', '1');
+                bgPath2.setAttribute('class', 'bg-path bg-active');
+
+                // Pindahkan guide ke titik awal stroke 2
+                const sp = activePath2.getPointAtLength(0);
+                handGuide.setAttribute('x', sp.x);
+                handGuide.setAttribute('y', sp.y + 10);
+                handGuide.style.opacity = '1';
+                guideVisible = true; guideStart = null;
+                requestAnimationFrame(animateHand);
+
+                strokeLabel.textContent = 'Stroke 2 dari 2 — Tarik ke bawah ↓';
+                if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+
+            } else {
+                // Selesai stroke 2 → done!
+                progress2 = 1.0;
+                updatePathDrawing();
+                completed = true; isDrawing = false;
+                handleSuccess();
+            }
         }
     }
 
-    // ── Success ───────────────────────────────────────────────────
     function handleSuccess() {
         playSoundA();
-        
-        // Haptic feedback sukses
-        if (navigator.vibrate) {
-            navigator.vibrate([50, 100, 50]);
-        }
-
+        if (navigator.vibrate) navigator.vibrate([50, 100, 50]);
         confetti({ particleCount: 160, spread: 90, origin: { y: 0.55 },
                    colors: ['#fbbf24','#f59e0b','#10b981','#3b82f6','#ec4899'] });
-        setTimeout(() => confetti({
-            particleCount: 80, angle: 60, spread: 55, origin: { x: 0 }
-        }), 250);
-        setTimeout(() => confetti({
-            particleCount: 80, angle: 120, spread: 55, origin: { x: 1 }
-        }), 400);
-
+        setTimeout(() => confetti({ particleCount: 80, angle: 60,  spread: 55, origin: { x: 0 } }), 250);
+        setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 55, origin: { x: 1 } }), 400);
         successMsg.style.display = 'block';
+        strokeLabel.textContent = '✅ Sempurna! Huruf a berhasil ditulis!';
     }
 
-    // ── Event listeners ───────────────────────────────────────────
-    // PERBAIKAN 1 & 2: Gunakan touch-area untuk event, lebih responsif
-    const eventTarget = touchArea;
-    
+    // Event listeners
     function startDraw(e) {
         e.preventDefault();
         isDrawing = true;
-        ensureSpeechReady();  // PERBAIKAN 3
+        ensureSpeechReady();
         checkTracing(e);
     }
-    
-    function endDraw() {
-        isDrawing = false;
-    }
-    
-    // Mouse events
-    eventTarget.addEventListener('mousedown', startDraw);
-    window.addEventListener('mouseup', endDraw);
-    eventTarget.addEventListener('mousemove', checkTracing);
-    
-    // Touch events
-    eventTarget.addEventListener('touchstart', startDraw, { passive: false });
+    function endDraw() { isDrawing = false; }
+
+    touchArea1.addEventListener('mousedown',  startDraw);
+    touchArea1.addEventListener('mousemove',  checkTracing);
+    touchArea1.addEventListener('touchstart', startDraw, { passive: false });
+    touchArea1.addEventListener('touchmove',  checkTracing, { passive: false });
+
+    touchArea2.addEventListener('mousedown',  startDraw);
+    touchArea2.addEventListener('mousemove',  checkTracing);
+    touchArea2.addEventListener('touchstart', startDraw, { passive: false });
+    touchArea2.addEventListener('touchmove',  checkTracing, { passive: false });
+
+    window.addEventListener('mouseup',  endDraw);
     window.addEventListener('touchend', endDraw);
-    eventTarget.addEventListener('touchmove', checkTracing, { passive: false });
-    
-    // PERBAIKAN 3: Inisialisasi speech saat tombol reset disentuh
+
     btnReset.addEventListener('click', () => {
         ensureSpeechReady();
-        
-        currentProgress = 0;
-        completed       = false;
-        isDrawing       = false;
+        currentStroke = 1;
+        progress1 = 0; progress2 = 0;
+        completed = false; isDrawing = false;
         updatePathDrawing();
-        guideVisible        = true;
-        guideStart          = null;
+
+        dot1.setAttribute('r', '13');
+        dot1.style.opacity = '0.9';
+        dot1.setAttribute('class', 'start-dot');
+        dot2.setAttribute('class', 'start-dot-dim');
+        dot2Num.setAttribute('opacity', '0.5');
+        bgPath1.setAttribute('class', 'bg-path bg-active');
+        bgPath2.setAttribute('class', 'bg-path bg-inactive');
+
+        guideVisible = true; guideStart = null;
         handGuide.style.opacity = '1';
+        const sp = activePath1.getPointAtLength(0);
+        handGuide.setAttribute('x', sp.x);
+        handGuide.setAttribute('y', sp.y + 10);
         requestAnimationFrame(animateHand);
-        successMsg.style.display  = 'none';
+
+        successMsg.style.display = 'none';
+        strokeLabel.textContent = 'Stroke 1 dari 2 — Buat lingkaran 🔵';
     });
-    
-    // PERBAIKAN 3: Inisialisasi speech dengan tap pertama di mana saja
+
     document.body.addEventListener('touchstart', ensureSpeechReady, { once: true });
-    document.body.addEventListener('mousedown', ensureSpeechReady, { once: true });
-    
-    // Inisialisasi awal
+    document.body.addEventListener('mousedown',  ensureSpeechReady, { once: true });
+
     updatePathDrawing();
 </script>
 </body>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Problem Klasik: Loker 100 Siswa</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+        }
+        h1 {
+            text-align: center;
+            color: #f1f5f9;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            background-color: #3b82f6;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        button:hover {
+            background-color: #2563eb;
+            transform: scale(1.02);
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .reset-btn {
+            background-color: #ef4444;
+        }
+        .reset-btn:hover {
+            background-color: #dc2626;
+        }
+        .info-panel {
+            background-color: #1e293b;
+            padding: 12px 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-weight: bold;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+        }
+        .student-card {
+            background-color: #3b82f6;
+            color: white;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-family: monospace;
+            font-size: 1.2rem;
+        }
+        .action-detail {
+            background-color: #334155;
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: #facc15;
+        }
+        .locker-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 8px;
+            background-color: #0f172a;
+            padding: 16px;
+            border-radius: 20px;
+            border: 2px solid #334155;
+        }
+        .locker {
+            aspect-ratio: 1 / 1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            cursor: default;
+            background-color: #475569;
+            color: #cbd5e1;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .locker.open {
+            background-color: #22c55e;
+            color: white;
+            box-shadow: 0 0 12px #22c55e;
+        }
+        /* Animasi flip */
+        @keyframes flip-animation {
+            0% {
+                transform: rotateY(0deg);
+                background-color: inherit;
+            }
+            50% {
+                transform: rotateY(90deg);
+                background-color: #facc15;
+            }
+            100% {
+                transform: rotateY(0deg);
+                background-color: inherit;
+            }
+        }
+        .locker.flipping {
+            animation: flip-animation 0.3s ease-in-out;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            color: #cbd5e1;
+        }
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #64748b;
+            font-size: 0.8rem;
+        }
+        .progress-text {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        @media (max-width: 700px) {
+            .locker { font-size: 0.7rem; }
+            .locker-grid { gap: 5px; }
+        }
+    </style>
+</head>
+<body>
+<h1>📦 Loker 100 Siswa 📦</h1>
+<div class="subtitle">Setiap siswa membalik loker kelipatannya</div>
+
+<div class="controls">
+    <button id="resetBtn" class="reset-btn">🔄 Reset Awal</button>
+    <button id="nextBtn">▶ Siswa Berikutnya</button>
+    <button id="skipBtn">⏩ Langsung ke Siswa Berikutnya (skip/tanpa animasi)</button>
+    <button id="finalBtn">🏁 Hasil Akhir</button>
+</div>
+
+<div class="info-panel">
+    <span>📌 Status:</span>
+    <span id="stepDesc" class="action-detail">Semua loker tertutup</span>
+    <span class="student-card" id="studentIndicator">Siswa ke-0 / 100</span>
+</div>
+
+<div class="locker-grid" id="lockerGrid"></div>
+
+<div class="legend">
+    <div><span class="legend-color" style="background:#22c55e;"></span> Terbuka</div>
+    <div><span class="legend-color" style="background:#475569;"></span> Tertutup</div>
+</div>
+<footer>
+    💡 Setiap klik <strong>Siswa Berikutnya</strong> → siswa akan membalik loker kelipatan nomornya SATU PER SATU dengan animasi flip.
+</footer>
+
+<script>
+    const N = 100;
+    let lockers = new Array(N).fill(false);   // false = tertutup, true = terbuka
+    let currentStudent = 0;   // 0 artinya belum ada siswa bertugas
+    let isAnimating = false;
+    let animationQueue = [];
+    let pendingFlipIndices = [];
+
+    const lockerGrid = document.getElementById('lockerGrid');
+    const stepDesc = document.getElementById('stepDesc');
+    const studentIndicator = document.getElementById('studentIndicator');
+    const nextBtn = document.getElementById('nextBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const skipBtn = document.getElementById('skipBtn');
+    const finalBtn = document.getElementById('finalBtn');
+
+    // Membuat grid
+    function buildGrid() {
+        lockerGrid.innerHTML = '';
+        for (let i = 0; i < N; i++) {
+            const div = document.createElement('div');
+            div.classList.add('locker');
+            div.classList.add(lockers[i] ? 'open' : 'closed');
+            div.textContent = i + 1;
+            div.id = `locker-${i}`;
+            lockerGrid.appendChild(div);
+        }
+    }
+
+    // Update tampilan tanpa animasi
+    function updateGridDisplay() {
+        for (let i = 0; i < N; i++) {
+            const cell = document.getElementById(`locker-${i}`);
+            if (lockers[i]) {
+                cell.classList.remove('closed');
+                cell.classList.add('open');
+            } else {
+                cell.classList.remove('open');
+                cell.classList.add('closed');
+            }
+        }
+    }
+
+    // Animasi flip pada satu loker
+    function animateFlip(index, afterFlipCallback) {
+        const cell = document.getElementById(`locker-${index}`);
+        if (!cell) return;
+        
+        // Tambah class animasi
+        cell.classList.add('flipping');
+        
+        // Setelah animasi selesai, ubah status sebenarnya
+        setTimeout(() => {
+            cell.classList.remove('flipping');
+            // Ubah status lockers[index]
+            lockers[index] = !lockers[index];
+            // Update tampilan kelas
+            if (lockers[index]) {
+                cell.classList.remove('closed');
+                cell.classList.add('open');
+            } else {
+                cell.classList.remove('open');
+                cell.classList.add('closed');
+            }
+            if (afterFlipCallback) afterFlipCallback();
+        }, 300);
+    }
+
+    // Menjalankan flip berurutan untuk daftar indeks
+    function runSequentialFlips(flipIndices, onComplete) {
+        if (flipIndices.length === 0) {
+            if (onComplete) onComplete();
+            return;
+        }
+        
+        let current = 0;
+        
+        function processNext() {
+            if (current >= flipIndices.length) {
+                if (onComplete) onComplete();
+                return;
+            }
+            const idx = flipIndices[current];
+            animateFlip(idx, () => {
+                current++;
+                processNext();
+            });
+        }
+        
+        processNext();
+    }
+
+    // Menjalankan tugas satu siswa dengan animasi flip satu per satu
+    function runStudentWithAnimation(studentNum, onComplete) {
+        if (studentNum < 1 || studentNum > 100) {
+            if (onComplete) onComplete();
+            return;
+        }
+        
+        // Kumpulkan indeks loker yang akan di-flip (kelipatan studentNum)
+        const indicesToFlip = [];
+        for (let i = studentNum; i <= N; i += studentNum) {
+            indicesToFlip.push(i - 1);
+        }
+        
+        if (indicesToFlip.length === 0) {
+            if (onComplete) onComplete();
+            return;
+        }
+        
+        // Jalankan flip berurutan
+        runSequentialFlips(indicesToFlip, () => {
+            if (onComplete) onComplete();
+        });
+    }
+
+    // Maju ke siswa berikutnya dengan animasi
+    function nextStudentWithAnimation() {
+        if (isAnimating) {
+            stepDesc.innerHTML = '⏳ Animasi sedang berjalan, mohon tunggu sebentar...';
+            return;
+        }
+        
+        if (currentStudent >= 100) {
+            stepDesc.innerHTML = '✅ Semua siswa sudah selesai!';
+            return;
+        }
+        
+        const next = currentStudent + 1;
+        isAnimating = true;
+        
+        // Disable tombol selama animasi
+        nextBtn.disabled = true;
+        skipBtn.disabled = true;
+        resetBtn.disabled = true;
+        finalBtn.disabled = true;
+        
+        stepDesc.innerHTML = `🎬 Siswa ${next} mulai membalik loker kelipatan ${next}...`;
+        studentIndicator.innerHTML = `Siswa ke-${next} / 100 (sedang proses)`;
+        
+        runStudentWithAnimation(next, () => {
+            currentStudent = next;
+            isAnimating = false;
+            
+            // Update info
+            if (currentStudent === 100) {
+                stepDesc.innerHTML = '✅ Proses selesai! Semua siswa sudah bertugas.';
+                studentIndicator.innerHTML = `Selesai (100 siswa)`;
+                nextBtn.disabled = true;
+            } else {
+                stepDesc.innerHTML = `✅ Siswa ${currentStudent} selesai membalik kelipatan ${currentStudent}`;
+                studentIndicator.innerHTML = `Siswa ke-${currentStudent} / 100`;
+                nextBtn.disabled = false;
+            }
+            
+            skipBtn.disabled = false;
+            resetBtn.disabled = false;
+            finalBtn.disabled = false;
+        });
+    }
+
+    // Langsung ke siswa berikutnya tanpa animasi (cepat)
+    function nextStudentNoAnimation() {
+        if (isAnimating) {
+            stepDesc.innerHTML = '⏳ Sedang animasi, tidak bisa skip saat ini. Tunggu selesai.';
+            return;
+        }
+        
+        if (currentStudent >= 100) return;
+        
+        const next = currentStudent + 1;
+        // Langsung ubah status tanpa animasi
+        for (let i = next; i <= N; i += next) {
+            lockers[i - 1] = !lockers[i - 1];
+        }
+        currentStudent = next;
+        updateGridDisplay();
+        
+        if (currentStudent === 100) {
+            stepDesc.innerHTML = '✅ Proses selesai! Semua siswa sudah bertugas.';
+            studentIndicator.innerHTML = `Selesai (100 siswa)`;
+            nextBtn.disabled = true;
+        } else {
+            stepDesc.innerHTML = `✅ Siswa ${currentStudent} selesai (tanpa animasi)`;
+            studentIndicator.innerHTML = `Siswa ke-${currentStudent} / 100`;
+        }
+    }
+
+    // Reset ke awal
+    function resetToInitial() {
+        if (isAnimating) return;
+        lockers.fill(false);
+        currentStudent = 0;
+        updateGridDisplay();
+        stepDesc.innerHTML = '🔒 Keadaan awal: semua loker tertutup';
+        studentIndicator.innerHTML = `Siswa ke-0 / 100`;
+        nextBtn.disabled = false;
+        skipBtn.disabled = false;
+        finalBtn.disabled = false;
+    }
+
+    // Hasil akhir langsung
+    function goToFinal() {
+        if (isAnimating) return;
+        lockers.fill(false);
+        for (let s = 1; s <= 100; s++) {
+            for (let i = s; i <= N; i += s) {
+                lockers[i-1] = !lockers[i-1];
+            }
+        }
+        currentStudent = 100;
+        updateGridDisplay();
+        stepDesc.innerHTML = '🏁 Hasil akhir setelah semua 100 siswa bertugas';
+        studentIndicator.innerHTML = `Selesai (100 siswa)`;
+        nextBtn.disabled = true;
+        skipBtn.disabled = false;
+        finalBtn.disabled = false;
+    }
+
+    // Event listeners
+    nextBtn.addEventListener('click', nextStudentWithAnimation);
+    skipBtn.addEventListener('click', nextStudentNoAnimation);
+    resetBtn.addEventListener('click', resetToInitial);
+    finalBtn.addEventListener('click', goToFinal);
+
+    // Inisialisasi
+    buildGrid();
+    updateGridDisplay();
+    stepDesc.innerHTML = '🔒 Keadaan awal: semua loker tertutup';
+    studentIndicator.innerHTML = `Siswa ke-0 / 100`;
+</script>
+</body>
+</html>

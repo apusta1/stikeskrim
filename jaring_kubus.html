@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cube Net - Hinge Hierarchy</title>
+<style>
+body{margin:0;overflow:hidden;background:#111927;font-family:Arial}
+#ui{position:absolute;top:10px;left:10px;z-index:10}
+button{padding:10px 16px;margin-right:8px}
+</style>
+<script type="importmap">
+{"imports":{
+"three":"https://unpkg.com/three@0.128.0/build/three.module.js",
+"three/addons/":"https://unpkg.com/three@0.128.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="ui">
+<button id="fold">Kubus</button>
+<button id="unfold">Jaring</button>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x111927);
+const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.1,100);
+camera.position.set(5,5,8);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+document.body.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;
+scene.add(new THREE.AmbientLight(0xffffff,.8));
+const d=new THREE.DirectionalLight(0xffffff,.9);d.position.set(5,8,6);scene.add(d);
+
+const size=2;
+function createFace(color){
+ const pivot=new THREE.Group();
+ const mesh=new THREE.Mesh(
+   new THREE.PlaneGeometry(size,size),
+   new THREE.MeshStandardMaterial({color,side:THREE.DoubleSide})
+ );
+ const edge=new THREE.LineSegments(
+   new THREE.EdgesGeometry(new THREE.PlaneGeometry(size,size)),
+   new THREE.LineBasicMaterial({color:0x222222})
+ );
+ mesh.add(edge);
+ pivot.add(mesh);
+ return {pivot,mesh};
+}
+function attach(parent,child,dir){
+ switch(dir){
+ case "top":
+   child.pivot.position.set(0,size/2,0);
+   child.mesh.position.set(0,size/2,0);break;
+ case "bottom":
+   child.pivot.position.set(0,-size/2,0);
+   child.mesh.position.set(0,-size/2,0);break;
+ case "left":
+   child.pivot.position.set(-size/2,0,0);
+   child.mesh.position.set(-size/2,0,0);break;
+ case "right":
+   child.pivot.position.set(size/2,0,0);
+   child.mesh.position.set(size/2,0,0);break;
+ }
+ parent.mesh.add(child.pivot);
+}
+const front=createFace(0xffe600);
+scene.add(front.pivot);
+const top=createFace(0xf50c0c);
+const left=createFace(0xffffff);
+const bottom=createFace(0xffffff);
+const right=createFace(0x8b00ff);
+const back=createFace(0x026e08);
+attach(front,top,"top");
+attach(top,left,"left");
+attach(front,bottom,"bottom");
+attach(bottom,right,"right");
+attach(bottom,back,"bottom");
+
+
+const closed={
+ top:-Math.PI/2,
+ bottom:Math.PI/2,
+ left:-Math.PI/2,
+ right:Math.PI/2,
+ back:Math.PI/2
+};
+let target=0,p=0;
+function update(){
+ p+= (target-p)*0.08;
+ top.pivot.rotation.x=closed.top*(1-p);
+ bottom.pivot.rotation.x=closed.bottom*(1-p);
+ left.pivot.rotation.y=closed.left*(1-p);
+ right.pivot.rotation.y=closed.right*(1-p);
+ back.pivot.rotation.x=closed.back*(1-p);
+ front.pivot.rotation.x=-Math.PI/4*(1-p)-Math.PI/3*p;
+ front.pivot.rotation.y=Math.PI/4*(1-p);
+}
+fold.onclick=()=>target=0;
+unfold.onclick=()=>target=1;
+addEventListener('resize',()=>{
+camera.aspect=innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(innerWidth,innerHeight);
+});
+renderer.setAnimationLoop(()=>{
+update();
+controls.update();
+renderer.render(scene,camera);
+});
+</script>
+</body>
+</html>
